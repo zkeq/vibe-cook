@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
+import { Navbar } from "@/components/navbar";
 
 export const metadata: Metadata = {
   title: "Vibe Cook · 跟着做就会",
@@ -18,7 +19,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  viewportFit: "cover", // iPad 安全区
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -27,9 +28,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN" className="h-full antialiased">
-      <body className="min-h-full">
-        <Providers>{children}</Providers>
+    <html lang="zh-CN" className="h-full">
+      <body className="min-h-full bg-background text-foreground antialiased">
+        <Providers>
+          <Navbar />
+          <div className="pt-14">{children}</div>
+        </Providers>
       </body>
     </html>
   );

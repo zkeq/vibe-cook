@@ -1,26 +1,71 @@
 @import "tailwindcss";
 
+/* ============ Vibe Cook 设计系统 · 暖色食欲调色板 ============ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fffaf5; /* 暖米白 */
+  --foreground: #2b1d16; /* 深可可 */
+  --card: #ffffff;
+  --card-foreground: #2b1d16;
+  --muted: #f4ece3;
+  --muted-foreground: #8a7a6d;
+  --border: #ece0d4;
+
+  --primary: #f5701f; /* 番茄橙 — 主行动色 */
+  --primary-foreground: #ffffff;
+  --accent: #e23d2e; /* 红椒 — 强调 */
+  --accent-foreground: #ffffff;
+  --success: #4c9a5d; /* 葱绿 — 完成正反馈 */
+  --success-foreground: #ffffff;
+
+  --radius: 1.25rem; /* 大圆角，柔和 */
+  --shadow-card: 0 8px 30px -12px rgba(120, 70, 30, 0.18);
+  --shadow-float: 0 16px 48px -16px rgba(120, 70, 30, 0.28);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --radius-card: var(--radius);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #1a120c;
+    --foreground: #f5ece4;
+    --card: #261a12;
+    --card-foreground: #f5ece4;
+    --muted: #2f2117;
+    --muted-foreground: #b3a294;
+    --border: #3a291d;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* iPad 安全区(刘海/圆角)留白 */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* 尊重系统“减少动态效果”设置 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

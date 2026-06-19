@@ -1,0 +1,18 @@
+{
+  "name": "Vibe Cook · 跟着做就会",
+  "short_name": "Vibe Cook",
+  "description": "一步一步带你做饭，看着馋就动手。",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#fffaf5",
+  "theme_color": "#f5701f",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

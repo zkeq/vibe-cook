@@ -27,13 +27,13 @@ export default function HomePage() {
       <FeatureBar />
 
       {/* 双行无限滚动 */}
-      <section className="border-y border-border bg-white/60 py-8 backdrop-blur-sm">
+      <section className="border-y border-border bg-white/60 py-6 backdrop-blur-sm">
         <div className="mb-4 flex items-center gap-2 px-6 lg:px-16">
           <Star className="h-4 w-4 text-primary" />
           <span className="text-sm font-semibold text-foreground">食谱一览</span>
           <span className="text-xs text-muted-foreground">— {mockRecipeList.length} 道精选，持续更新</span>
         </div>
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 pt-2">
           <Marquee items={mockRecipeList} />
           <Marquee items={[...mockRecipeList].reverse()} reverse />
         </div>

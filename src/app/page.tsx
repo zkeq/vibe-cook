@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
-import { motion, useAnimationFrame } from "motion/react";
+import { useRef, useState, useEffect } from "react";
+import { motion, useAnimationFrame, AnimatePresence } from "motion/react";
 import { Clock, Flame, ChefHat, Timer, Star } from "lucide-react";
 import { mockRecipeList } from "@/lib/mock";
 import type { RecipeSummary } from "@/lib/types";
@@ -46,6 +46,43 @@ function HeroLeft() {
   );
 }
 
+/* ─── 循环切换文案 ─── */
+const COPY_LINES = [
+  { from: "「看完就忘」", to: "「一步做出来」" },
+  { from: "「只会外卖」", to: "「自己下厨」" },
+  { from: "「食谱收藏夹」", to: "「餐桌上的菜」" },
+  { from: "「看着馋」", to: "「跟着做就会」" },
+  { from: "「不知做什么」", to: "「10分钟上桌」" },
+];
+
+function AnimatedCopy() {
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => setIdx((i) => (i + 1) % COPY_LINES.length), 2800);
+    return () => clearInterval(t);
+  }, []);
+
+  const { from, to } = COPY_LINES[idx];
+  return (
+    <div className="overflow-hidden">
+      <AnimatePresence mode="wait">
+        <motion.h2
+          key={idx}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          className="mt-1 text-2xl font-black leading-snug tracking-tight text-foreground"
+        >
+          把{from}<br />
+          变成<span className="text-primary">{to}</span>
+        </motion.h2>
+      </AnimatePresence>
+    </div>
+  );
+}
+
 /* ─── Hero 右侧：富文本信息堆叠 ─── */
 function HeroRight() {
   return (
@@ -61,9 +98,7 @@ function HeroRight() {
         className="pb-4"
       >
         <p className="text-[13px] font-medium uppercase tracking-widest text-primary">Step-by-step cooking</p>
-        <h2 className="mt-1 text-2xl font-black leading-snug tracking-tight text-foreground">
-          把「看完就忘」<br />变成「一步做出来」
-        </h2>
+        <AnimatedCopy />
       </motion.div>
 
       <motion.div variants={{ hidden: { opacity: 0 }, show: { opacity: 1 } }} className="mb-4 h-px bg-border" />
@@ -186,7 +221,7 @@ export default function HomePage() {
     <main className="min-h-screen">
       <DotBg />
 
-      <section className="mx-auto max-w-3xl px-6 pt-16 pb-4">
+      <section className="mx-auto max-w-4xl px-6 pt-16 pb-4 lg:pl-24">
         {/* 左右布局 */}
         <div className="flex flex-col items-center gap-10 lg:flex-row lg:items-start lg:gap-16">
           <HeroLeft />

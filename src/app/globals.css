@@ -58,3 +58,15 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+@keyframes marquee-left {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@keyframes marquee-right {
+  from { transform: translateX(0); }
+  to   { transform: translateX(50%); }
+}
+.animate-marquee-left  { animation: marquee-left  28s linear infinite; }
+.animate-marquee-right { animation: marquee-right 28s linear infinite; }
+

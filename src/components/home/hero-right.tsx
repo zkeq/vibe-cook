@@ -1,0 +1,80 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
+
+const COPY_LINES = [
+  { from: "「看完就忘」",   to: "「一步做出来」" },
+  { from: "「只会外卖」",   to: "「自己下厨」" },
+  { from: "「食谱收藏夹」", to: "「餐桌上的菜」" },
+  { from: "「看着馋」",     to: "「跟着做就会」" },
+  { from: "「不知做什么」", to: "「10分钟上桌」" },
+];
+
+function AnimatedCopy() {
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setIdx((i) => (i + 1) % COPY_LINES.length), 2800);
+    return () => clearInterval(t);
+  }, []);
+  const { from, to } = COPY_LINES[idx];
+  return (
+    <div className="overflow-hidden">
+      <AnimatePresence mode="wait">
+        <motion.h2
+          key={idx}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          className="mt-1 text-2xl font-black leading-snug tracking-tight text-foreground"
+        >
+          把{from}<br />
+          变成<span className="text-primary">{to}</span>
+        </motion.h2>
+      </AnimatePresence>
+    </div>
+  );
+}
+
+export function HeroRight() {
+  return (
+    <motion.div
+      initial="hidden"
+      animate="show"
+      variants={{ hidden: {}, show: { transition: { staggerChildren: 0.07 } } }}
+      className="flex w-full max-w-sm flex-col gap-0"
+    >
+      <motion.div
+        variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}
+        className="pb-4"
+      >
+        <p className="text-[13px] font-medium uppercase tracking-widest text-primary">Step-by-step cooking</p>
+        <AnimatedCopy />
+      </motion.div>
+
+      <motion.div variants={{ hidden: { opacity: 0 }, show: { opacity: 1 } }} className="mb-4 h-px bg-border" />
+
+      <motion.div
+        variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0 } }}
+        className="flex items-center gap-5 pb-4"
+      >
+        <div>
+          <span className="text-3xl font-black text-foreground">50</span>
+          <span className="ml-0.5 text-lg font-black text-primary">+</span>
+          <p className="text-[11px] text-muted-foreground">精选食谱</p>
+        </div>
+        <div className="h-8 w-px bg-border" />
+        <div>
+          <span className="text-3xl font-black text-foreground">5</span>
+          <p className="text-[11px] text-muted-foreground">平均步数</p>
+        </div>
+        <div className="h-8 w-px bg-border" />
+        <div>
+          <span className="text-3xl font-black text-foreground">0</span>
+          <p className="text-[11px] text-muted-foreground">基础要求</p>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}

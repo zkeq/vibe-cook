@@ -11,14 +11,20 @@ import { Marquee }    from "@/components/home/marquee";
 import { RecipeGrid } from "@/components/home/recipe-grid";
 import { useIntro }   from "@/lib/intro-context";
 
-const SECTION_VARIANTS = {
-  hidden: { opacity: 0, y: 40 },
-  show:   { opacity: 1, y: 0 },
-};
-
 export default function HomePage() {
   const { phase } = useIntro();
   const entered = phase === "app" || phase === "done";
+
+  const fadeUp = (delay: number) =>
+    entered
+      ? { opacity: [0, 1] as number[], y: [40, 0] as number[] }
+      : { opacity: 0 };
+
+  const trans = (delay: number) => ({
+    duration: 0.6,
+    delay,
+    ease: "easeOut" as const,
+  });
 
   return (
     <main className="min-h-screen">
@@ -26,10 +32,9 @@ export default function HomePage() {
 
       {/* Hero */}
       <motion.section
-        variants={SECTION_VARIANTS}
-        initial="hidden"
-        animate={entered ? "show" : "hidden"}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
+        initial={{ opacity: 0 }}
+        animate={fadeUp(0.15)}
+        transition={trans(0.15)}
         className="mx-auto max-w-3xl px-6 pb-4 pt-16"
       >
         <div className="flex flex-col items-center gap-10 lg:flex-row lg:items-start lg:justify-center lg:gap-16">
@@ -41,20 +46,18 @@ export default function HomePage() {
 
       {/* 五条特性 */}
       <motion.div
-        variants={SECTION_VARIANTS}
-        initial="hidden"
-        animate={entered ? "show" : "hidden"}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.28 }}
+        initial={{ opacity: 0 }}
+        animate={fadeUp(0.28)}
+        transition={trans(0.28)}
       >
         <FeatureBar />
       </motion.div>
 
       {/* 双行无限滚动 */}
       <motion.section
-        variants={SECTION_VARIANTS}
-        initial="hidden"
-        animate={entered ? "show" : "hidden"}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.38 }}
+        initial={{ opacity: 0 }}
+        animate={fadeUp(0.38)}
+        transition={trans(0.38)}
         className="border-y border-border bg-white/60 py-6 backdrop-blur-sm"
       >
         <div className="mb-4 flex items-center gap-2 px-6 lg:px-16">
@@ -72,10 +75,9 @@ export default function HomePage() {
 
       {/* 食谱网格 */}
       <motion.div
-        variants={SECTION_VARIANTS}
-        initial="hidden"
-        animate={entered ? "show" : "hidden"}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1], delay: 0.48 }}
+        initial={{ opacity: 0 }}
+        animate={fadeUp(0.48)}
+        transition={trans(0.48)}
       >
         <RecipeGrid items={mockRecipeList} />
       </motion.div>

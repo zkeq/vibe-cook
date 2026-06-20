@@ -19,10 +19,10 @@ export function Navbar() {
 
   return (
     <motion.header
-      initial={{ y: -60, opacity: 0 }}
-      animate={visible ? { y: 0, opacity: 1 } : { y: -60, opacity: 0 }}
-      transition={{ type: "spring", stiffness: 260, damping: 28, delay: 0.1 }}
-      className="fixed inset-x-0 top-0 z-50 h-14 border-b border-border bg-white/80 backdrop-blur-md"
+    initial={{ opacity: 0, y: -20 }}
+    animate={visible ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }}
+    transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+    className="fixed inset-x-0 top-0 z-50 h-14 border-b border-border bg-white/80 backdrop-blur-md"
     >
       <div className="mx-auto flex h-full max-w-5xl items-center justify-between px-4">
         {/* Logo */}

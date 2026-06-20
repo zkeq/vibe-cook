@@ -23,7 +23,7 @@ export function FeatureBar() {
         >
           <div className="flex items-center gap-1.5">
             <span className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${dot}`} />
-            <span className="text-[10px] font-bold tracking-widest text-muted-foreground">{num}</span>
+            <span className="text-xs font-bold tracking-widest text-muted-foreground">{num}</span>
           </div>
           <p className="text-sm font-bold text-foreground">{title}</p>
           <p className="text-xs leading-relaxed text-muted-foreground">{sub}</p>

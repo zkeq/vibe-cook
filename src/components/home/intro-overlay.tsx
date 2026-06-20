@@ -154,8 +154,8 @@ export function IntroOverlay() {
               aria-hidden
               className="pointer-events-none absolute inset-0 z-0"
               style={{
-                backgroundImage: "radial-gradient(circle, #e2e2e2 1.2px, transparent 1.2px)",
-                backgroundSize: "22px 22px",
+                backgroundImage: "radial-gradient(circle, #e2e2e2 1.32px, transparent 1.32px)",
+                backgroundSize: "24.2px 24.2px",
               }}
             />
             <div className="relative z-10 h-full w-full">

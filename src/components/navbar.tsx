@@ -30,7 +30,7 @@ export function Navbar() {
           <span className="grid h-8 w-8 place-items-center rounded-xl bg-primary text-white shadow-sm">
             <ChefHat className="h-4 w-4" />
           </span>
-          <span className="text-[15px] font-bold tracking-tight">Vibe Cook</span>
+          <span className="text-base font-bold tracking-tight">Vibe Cook</span>
         </Link>
 
         {/* Nav links */}

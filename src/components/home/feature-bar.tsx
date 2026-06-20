@@ -12,14 +12,14 @@ const FEATURES = [
 
 export function FeatureBar() {
   return (
-    <div className="mx-auto grid max-w-5xl grid-cols-5 px-8 pb-10 pt-2">
+    <div className="mx-auto grid max-w-5xl grid-cols-2 px-8 pb-10 pt-2 lg:grid-cols-5">
       {FEATURES.map(({ dot, num, title, sub }, i) => (
         <motion.div
           key={num}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 + i * 0.07, type: "spring", stiffness: 260, damping: 24 }}
-          className="flex flex-col gap-1 pr-4"
+          className={`flex flex-col gap-1 py-3 pr-4 lg:py-0 ${i === 4 ? "col-span-2 lg:col-span-1" : ""}`}
         >
           <div className="flex items-center gap-1.5">
             <span className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${dot}`} />

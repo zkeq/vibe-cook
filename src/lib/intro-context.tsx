@@ -7,9 +7,10 @@ export type IntroPhase = "hero" | "waterfall" | "app" | "done";
 interface IntroCtx {
   phase: IntroPhase;
   advance: () => void;
+  skip: () => void;
 }
 
-const Ctx = createContext<IntroCtx>({ phase: "hero", advance: () => {} });
+const Ctx = createContext<IntroCtx>({ phase: "hero", advance: () => {}, skip: () => {} });
 
 const ORDER: IntroPhase[] = ["hero", "waterfall", "app", "done"];
 
@@ -21,7 +22,8 @@ export function IntroProvider({ children }: { children: React.ReactNode }) {
       return ORDER[Math.min(idx + 1, ORDER.length - 1)];
     });
   }, []);
-  return <Ctx.Provider value={{ phase, advance }}>{children}</Ctx.Provider>;
+  const skip = useCallback(() => setPhase("done"), []);
+  return <Ctx.Provider value={{ phase, advance, skip }}>{children}</Ctx.Provider>;
 }
 
 export function useIntro() {

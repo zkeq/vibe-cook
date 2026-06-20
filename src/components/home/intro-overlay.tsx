@@ -119,7 +119,7 @@ function WaterfallPhase() {
 
 /* ── 主 Overlay ── */
 export function IntroOverlay() {
-  const { phase, advance } = useIntro();
+  const { phase, advance, skip } = useIntro();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -145,6 +145,14 @@ export function IntroOverlay() {
     return () => { document.body.style.overflow = ""; };
   }, [visible]);
 
+  // 键盘任意键跳过
+  useEffect(() => {
+    if (!visible) return;
+    const handler = () => skip();
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [visible, skip]);
+
   return (
     <>
       <style>{CSS}</style>
@@ -168,6 +176,16 @@ export function IntroOverlay() {
                 backgroundSize: "24.2px 24.2px",
               }}
             />
+            {/* 右上角跳过按钮 */}
+            <button
+              onClick={skip}
+              className="absolute right-6 top-6 z-20 flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-all hover:bg-primary/20 active:scale-95"
+            >
+              跳过
+              <span className="rounded-md border border-primary/30 px-1.5 py-0.5 text-[11px] font-normal tracking-wide text-primary/60">
+                按任意键
+              </span>
+            </button>
             <div className="relative z-10 h-full w-full">
             <AnimatePresence mode="wait">
               {/* ── Screen 1: 白底 Hero + FeatureBar ── */}

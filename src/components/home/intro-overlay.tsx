@@ -174,7 +174,7 @@ export function IntroOverlay() {
                     <div className="flex flex-col items-center gap-10 lg:flex-row lg:items-start lg:justify-center lg:gap-16">
                       <HeroLeft />
                       <div className="hidden h-auto w-px self-stretch bg-[#e5e5e5] lg:block" />
-                      <HeroRight />
+                      <HeroRight interval={1400} />
                     </div>
                   </section>
                   <div className="w-full">

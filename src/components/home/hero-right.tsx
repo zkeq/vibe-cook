@@ -11,12 +11,12 @@ const COPY_LINES = [
   { from: "「不知做什么」", to: "「10分钟上桌」" },
 ];
 
-function AnimatedCopy() {
+function AnimatedCopy({ interval = 2800 }: { interval?: number }) {
   const [idx, setIdx] = useState(0);
   useEffect(() => {
-    const t = setInterval(() => setIdx((i) => (i + 1) % COPY_LINES.length), 1200);
+    const t = setInterval(() => setIdx((i) => (i + 1) % COPY_LINES.length), interval);
     return () => clearInterval(t);
-  }, []);
+  }, [interval]);
   const { from, to } = COPY_LINES[idx];
   return (
     <div className="overflow-hidden">
@@ -37,7 +37,7 @@ function AnimatedCopy() {
   );
 }
 
-export function HeroRight() {
+export function HeroRight({ interval = 2800 }: { interval?: number }) {
   return (
     <motion.div
       initial="hidden"
@@ -50,7 +50,7 @@ export function HeroRight() {
         className="pb-4"
       >
         <p className="text-[13px] font-medium uppercase tracking-widest text-primary">Step-by-step cooking</p>
-        <AnimatedCopy />
+        <AnimatedCopy interval={interval} />
       </motion.div>
 
       <motion.div variants={{ hidden: { opacity: 0 }, show: { opacity: 1 } }} className="mb-4 h-px bg-border" />

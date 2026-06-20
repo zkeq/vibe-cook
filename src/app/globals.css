@@ -2,7 +2,7 @@
 
 /* ============ Vibe Cook 设计系统 · 暖色食欲调色板 ============ */
 :root {
-  font-size: 110%;
+  font-size: clamp(16px, 1.2vw, 22px);
   --background: #ffffff;
   --foreground: #1a1a1a;
   --card: #ffffff;
@@ -47,6 +47,13 @@ body {
   /* iPad 安全区(刘海/圆角)留白 */
   padding: env(safe-area-inset-top) env(safe-area-inset-right)
     env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* 手机屏固定回 16px，避免 vw 算出来太小 */
+@media (max-width: 640px) {
+  :root {
+    font-size: 16px;
+  }
 }
 
 /* 尊重系统“减少动态效果”设置 */

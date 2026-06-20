@@ -2,7 +2,7 @@
 
 /* ============ Vibe Cook 设计系统 · 暖色食欲调色板 ============ */
 :root {
-  font-size: clamp(16px, 1.2vw, 18px);
+  font-size: clamp(16px, 1.15vw, 24px);
   --background: #ffffff;
   --foreground: #1a1a1a;
   --card: #ffffff;

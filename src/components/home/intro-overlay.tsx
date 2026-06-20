@@ -135,6 +135,16 @@ export function IntroOverlay() {
 
   const visible = phase === "hero" || phase === "waterfall";
 
+  // 动画期间锁住 body 滚动
+  useEffect(() => {
+    if (visible) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [visible]);
+
   return (
     <>
       <style>{CSS}</style>

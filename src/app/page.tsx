@@ -35,7 +35,7 @@ export default function HomePage() {
         initial={{ opacity: 0 }}
         animate={fadeUp(0.15)}
         transition={trans(0.15)}
-        className="mx-auto max-w-3xl px-6 pb-4 pt-16"
+        className="mx-auto max-w-5xl px-8 pb-4 pt-16"
       >
         <div className="flex flex-col items-center gap-10 lg:flex-row lg:items-start lg:justify-center lg:gap-16">
           <HeroLeft />

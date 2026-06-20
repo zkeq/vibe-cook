@@ -27,7 +27,7 @@ function AnimatedCopy({ interval = 2800 }: { interval?: number }) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-1 text-2xl font-black leading-snug tracking-tight text-foreground"
+          className="mt-1 text-4xl font-black leading-snug tracking-tight text-foreground"
         >
           把{from}<br />
           变成<span className="text-primary">{to}</span>
@@ -49,7 +49,7 @@ export function HeroRight({ interval = 2800 }: { interval?: number }) {
         variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}
         className="pb-4"
       >
-        <p className="text-[13px] font-medium uppercase tracking-widest text-primary">Step-by-step cooking</p>
+        <p className="text-sm font-medium uppercase tracking-widest text-primary">Step-by-step cooking</p>
         <AnimatedCopy interval={interval} />
       </motion.div>
 
@@ -60,19 +60,19 @@ export function HeroRight({ interval = 2800 }: { interval?: number }) {
         className="flex items-center gap-5 pb-4"
       >
         <div>
-          <span className="text-3xl font-black text-foreground">50</span>
-          <span className="ml-0.5 text-lg font-black text-primary">+</span>
-          <p className="text-[11px] text-muted-foreground">精选食谱</p>
+          <span className="text-5xl font-black text-foreground">50</span>
+          <span className="ml-0.5 text-2xl font-black text-primary">+</span>
+          <p className="text-xs text-muted-foreground">精选食谱</p>
         </div>
         <div className="h-8 w-px bg-border" />
         <div>
-          <span className="text-3xl font-black text-foreground">5</span>
-          <p className="text-[11px] text-muted-foreground">平均步数</p>
+          <span className="text-5xl font-black text-foreground">5</span>
+          <p className="text-xs text-muted-foreground">平均步数</p>
         </div>
         <div className="h-8 w-px bg-border" />
         <div>
-          <span className="text-3xl font-black text-foreground">0</span>
-          <p className="text-[11px] text-muted-foreground">基础要求</p>
+          <span className="text-5xl font-black text-foreground">0</span>
+          <p className="text-xs text-muted-foreground">基础要求</p>
         </div>
       </motion.div>
     </motion.div>

@@ -12,7 +12,7 @@ const FEATURES = [
 
 export function FeatureBar() {
   return (
-    <div className="mx-auto grid max-w-3xl grid-cols-5 px-6 pb-10 pt-2">
+    <div className="mx-auto grid max-w-5xl grid-cols-5 px-8 pb-10 pt-2">
       {FEATURES.map(({ dot, num, title, sub }, i) => (
         <motion.div
           key={num}
@@ -25,8 +25,8 @@ export function FeatureBar() {
             <span className={`h-1.5 w-1.5 flex-shrink-0 rounded-full ${dot}`} />
             <span className="text-[10px] font-bold tracking-widest text-muted-foreground">{num}</span>
           </div>
-          <p className="text-xs font-bold text-foreground">{title}</p>
-          <p className="text-[11px] leading-relaxed text-muted-foreground">{sub}</p>
+          <p className="text-sm font-bold text-foreground">{title}</p>
+          <p className="text-xs leading-relaxed text-muted-foreground">{sub}</p>
         </motion.div>
       ))}
     </div>

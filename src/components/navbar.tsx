@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChefHat, BookOpen, Search } from "lucide-react";
+import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
+import { useIntro } from "@/lib/intro-context";
 
 const navItems = [
   { href: "/", label: "食谱", icon: BookOpen },
@@ -12,9 +14,16 @@ const navItems = [
 
 export function Navbar() {
   const pathname = usePathname();
+  const { phase } = useIntro();
+  const visible = phase === "app" || phase === "done";
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 h-14 border-b border-border bg-white/80 backdrop-blur-md">
+    <motion.header
+      initial={{ y: -60, opacity: 0 }}
+      animate={visible ? { y: 0, opacity: 1 } : { y: -60, opacity: 0 }}
+      transition={{ type: "spring", stiffness: 260, damping: 28, delay: 0.1 }}
+      className="fixed inset-x-0 top-0 z-50 h-14 border-b border-border bg-white/80 backdrop-blur-md"
+    >
       <div className="mx-auto flex h-full max-w-5xl items-center justify-between px-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
@@ -46,6 +55,6 @@ export function Navbar() {
           })}
         </nav>
       </div>
-    </header>
+    </motion.header>
   );
 }

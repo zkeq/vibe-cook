@@ -2,15 +2,16 @@
 
 import { useState, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { IntroProvider } from "@/lib/intro-context";
+import { IntroOverlay } from "@/components/home/intro-overlay";
 
-/** 全局客户端 Provider：TanStack Query 缓存食谱数据 */
 export function Providers({ children }: { children: ReactNode }) {
   const [client] = useState(
     () =>
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 60_000, // 食谱不常变，1 分钟内不重取
+            staleTime: 60_000,
             refetchOnWindowFocus: false,
             retry: 1,
           },
@@ -18,5 +19,12 @@ export function Providers({ children }: { children: ReactNode }) {
       }),
   );
 
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={client}>
+      <IntroProvider>
+        <IntroOverlay />
+        {children}
+      </IntroProvider>
+    </QueryClientProvider>
+  );
 }

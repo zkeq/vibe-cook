@@ -14,7 +14,7 @@ const COPY_LINES = [
 function AnimatedCopy() {
   const [idx, setIdx] = useState(0);
   useEffect(() => {
-    const t = setInterval(() => setIdx((i) => (i + 1) % COPY_LINES.length), 2800);
+    const t = setInterval(() => setIdx((i) => (i + 1) % COPY_LINES.length), 1200);
     return () => clearInterval(t);
   }, []);
   const { from, to } = COPY_LINES[idx];
@@ -42,7 +42,7 @@ export function HeroRight() {
     <motion.div
       initial="hidden"
       animate="show"
-      variants={{ hidden: {}, show: { transition: { staggerChildren: 0.07 } } }}
+      variants={{ hidden: {}, show: { transition: { staggerChildren: 0.18, delayChildren: 0.6 } } }}
       className="flex w-full max-w-sm flex-col gap-0"
     >
       <motion.div

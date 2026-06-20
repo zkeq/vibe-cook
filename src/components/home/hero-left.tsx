@@ -9,7 +9,7 @@ export function HeroLeft() {
       <motion.div
         initial={{ scale: 0.7, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 300, damping: 22 }}
+        transition={{ type: "spring", stiffness: 180, damping: 20, delay: 0.1 }}
         className="grid h-20 w-20 place-items-center rounded-[22px] bg-primary shadow-2xl shadow-primary/30"
       >
         <ChefHat className="h-10 w-10 text-white" />
@@ -17,7 +17,7 @@ export function HeroLeft() {
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15, duration: 0.5 }}
+        transition={{ delay: 0.5, duration: 0.7 }}
         className="flex flex-col items-center gap-0.5 lg:items-start"
       >
         <span className="text-2xl font-black tracking-tight text-foreground">Vibe Cook</span>

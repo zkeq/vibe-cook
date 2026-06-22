@@ -34,7 +34,7 @@ export function DetailClient({ recipe }: DetailClientProps) {
 
         {/* 主内容区 */}
         <main className="relative z-10 flex-1 overflow-y-auto p-8">
-          <div className="mx-auto max-w-[1200px] rounded-xl border border-border/60 bg-[#fdfdfd] p-8 shadow-sm">
+          <div className="h-full rounded-xl border border-border/60 bg-[#fdfdfd] p-8 shadow-sm">
             {/* 顶部标题栏 */}
             <RecipeHeader recipe={recipe} />
 

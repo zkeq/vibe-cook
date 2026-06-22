@@ -6,6 +6,7 @@ import { ChefHat, BookOpen, Search } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { useIntro } from "@/lib/intro-context";
+import { useState } from "react";
 
 const navItems = [
   { href: "/", label: "食谱", icon: BookOpen },
@@ -16,6 +17,7 @@ export function Navbar() {
   const pathname = usePathname();
   const { phase } = useIntro();
   const visible = phase === "app" || phase === "done";
+  const [searchQuery, setSearchQuery] = useState("");
 
   return (
     <motion.header
@@ -24,14 +26,26 @@ export function Navbar() {
     transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
     className="fixed inset-x-0 top-0 z-50 h-14 border-b border-border bg-white/80 backdrop-blur-md"
     >
-      <div className="mx-auto flex h-full max-w-5xl items-center justify-between px-4">
+      <div className="mx-auto flex h-full max-w-7xl items-center justify-between gap-4 px-4">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex flex-shrink-0 items-center gap-2">
           <span className="grid h-8 w-8 place-items-center rounded-xl bg-primary text-white shadow-sm">
             <ChefHat className="h-4 w-4" />
           </span>
-          <span className="text-base font-bold tracking-tight">Vibe Cook</span>
+          <span className="hidden text-base font-bold tracking-tight sm:inline">Vibe Cook</span>
         </Link>
+
+        {/* 搜索框 */}
+        <div className="flex max-w-md flex-1 items-center gap-2 rounded-lg bg-muted px-3 py-1.5">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="搜索菜谱..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          />
+        </div>
 
         {/* Nav links */}
         <nav className="flex items-center gap-1">
@@ -49,7 +63,7 @@ export function Navbar() {
                 )}
               >
                 <Icon className="h-3.5 w-3.5" />
-                {label}
+                <span className="hidden sm:inline">{label}</span>
               </Link>
             );
           })}

@@ -29,16 +29,17 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
   });
 
   return (
-    <div className="mb-6 grid gap-6 lg:grid-cols-[320px_1fr]">
-      {/* 左侧：主图 */}
-      <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-gradient-to-br from-orange-50 to-amber-50">
-        <div className="flex h-full items-center justify-center">
-          <ChefHat className="h-16 w-16 text-primary/20" />
+    <div className="mb-6 rounded-xl bg-white p-4 shadow-sm">
+      <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+        {/* 左侧：主图 */}
+        <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-gradient-to-br from-orange-50 to-amber-50">
+          <div className="flex h-full items-center justify-center">
+            <ChefHat className="h-16 w-16 text-primary/20" />
+          </div>
         </div>
-      </div>
 
-      {/* 右侧：信息区 */}
-      <div className="flex flex-col">
+        {/* 右侧：信息区 */}
+        <div className="flex flex-col">
         {/* 标题和简介 */}
         <div className="mb-3">
           <h1 className="mb-1 text-xl font-bold">{recipe.title}</h1>
@@ -174,6 +175,7 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
           </button>
         </div>
       </div>
+    </div>
     </div>
   );
 }

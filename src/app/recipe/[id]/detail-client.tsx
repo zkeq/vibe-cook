@@ -19,16 +19,6 @@ export function DetailClient({ recipe }: DetailClientProps) {
 
   return (
     <>
-      {/* 点状背景 */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 z-0"
-        style={{
-          backgroundImage: "radial-gradient(circle, #e2e2e2 1.32px, transparent 1.32px)",
-          backgroundSize: "24.2px 24.2px",
-        }}
-      />
-
       <div className="-mt-14 flex min-h-screen pt-14">
         {/* 左侧导航 */}
         <RecipeSidebar
@@ -38,8 +28,15 @@ export function DetailClient({ recipe }: DetailClientProps) {
         />
 
         {/* 主内容区 */}
-        <main className={`relative z-10 flex-1 overflow-y-auto ${sidebarCollapsed ? '' : 'pl-6'}`}>
-          <div className="h-full border-l border-t border-b border-border/60 bg-[#fdfdfd] p-4 shadow-sm">
+        <main className="relative z-10 flex-1 overflow-y-auto">
+          <div
+            className="h-full border-l border-t border-b border-border/60 p-6 shadow-sm"
+            style={{
+              backgroundColor: "#fdfdfd",
+              backgroundImage: "radial-gradient(circle, #e8e8e8 1.2px, transparent 1.2px)",
+              backgroundSize: "20px 20px",
+            }}
+          >
             {/* 顶部标题栏 */}
             <RecipeHeader recipe={recipe} />
 

@@ -43,7 +43,7 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
         {/* 标题和简介 */}
         <div className="mb-3">
           <h1 className="mb-1 text-xl font-bold">{recipe.title}</h1>
-          <p className="text-[11px] leading-relaxed text-muted-foreground">{recipe.summary}</p>
+          <p className="text-xs leading-relaxed text-muted-foreground">{recipe.summary}</p>
         </div>
 
         {/* 菜谱信息标题 */}
@@ -56,41 +56,41 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
         <div className="mb-3 grid grid-cols-2 gap-3 py-3 md:grid-cols-4">
           {/* 时间 */}
           <div>
-            <span className="flex items-baseline gap-1 text-lg font-black text-foreground">
+            <span className="flex items-baseline gap-1 text-xl font-black text-foreground">
               {recipe.duration_min}
-              <span className="text-[10px] font-black text-primary">MIN</span>
+              <span className="text-xs font-black text-primary">MIN</span>
             </span>
-            <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">准备时长 / Time</p>
+            <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">准备时长 / Time</p>
           </div>
 
           {/* 卡路里 */}
           <div>
-            <span className="flex items-baseline gap-1 text-lg font-black text-foreground">
+            <span className="flex items-baseline gap-1 text-xl font-black text-foreground">
               {recipe.calories}
-              <span className="text-[10px] font-black text-primary">KCAL</span>
+              <span className="text-xs font-black text-primary">KCAL</span>
             </span>
-            <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">热量能耗 / Calories</p>
+            <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">热量能耗 / Calories</p>
           </div>
 
           {/* 难度星星 */}
           <div>
-            <div className="flex h-6 items-center gap-1">
+            <div className="flex h-7 items-center gap-1">
               {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} className={cn("h-3 w-3", i < recipe.difficulty ? "fill-primary text-primary" : "fill-neutral-200 text-neutral-200")} />
+                <Star key={i} className={cn("h-3.5 w-3.5", i < recipe.difficulty ? "fill-primary text-primary" : "fill-neutral-200 text-neutral-200")} />
               ))}
             </div>
-            <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+            <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
               {recipe.difficulty === 1 ? "简单 / Easy" : recipe.difficulty === 2 ? "一般 / Medium" : "复杂 / Hard"}
             </p>
           </div>
 
           {/* 工具数 */}
           <div>
-            <span className="flex h-6 items-center text-lg font-black text-foreground">
+            <span className="flex h-7 items-center text-xl font-black text-foreground">
               {recipe.tools.length}
-              <span className="ml-1 text-[10px] font-black text-primary">ITEMS</span>
+              <span className="ml-1 text-xs font-black text-primary">ITEMS</span>
             </span>
-            <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">使用工具 / Tools</p>
+            <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">使用工具 / Tools</p>
           </div>
         </div>
 

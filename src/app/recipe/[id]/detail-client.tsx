@@ -6,8 +6,6 @@ import { mockRecipeList } from "@/lib/mock";
 import {
   RecipeSidebar,
   RecipeHeader,
-  RecipeMainImage,
-  RecipeControls,
   RecipeSteps,
   RecipeNotes,
 } from "@/components/recipe-detail";
@@ -46,13 +44,7 @@ export function DetailClient({ recipe }: DetailClientProps) {
             <RecipeHeader recipe={recipe} />
 
             {/* 主网格 */}
-            <div className="space-y-8">
-              {/* 成品图 + 份数/工具/原料 */}
-              <div className="grid gap-6 lg:grid-cols-[3fr_7fr]">
-                <RecipeMainImage />
-                <RecipeControls recipe={recipe} />
-              </div>
-
+            <div className="space-y-6">
               {/* 步骤区域 */}
               <RecipeSteps recipe={recipe} />
 

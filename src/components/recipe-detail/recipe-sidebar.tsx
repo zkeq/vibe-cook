@@ -10,10 +10,14 @@ import { cn } from "@/lib/utils";
 
 interface RecipeSidebarProps {
   recipes: RecipeSummary[];
+  collapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
 }
 
-export function RecipeSidebar({ recipes }: RecipeSidebarProps) {
-  const [collapsed, setCollapsed] = useState(false);
+export function RecipeSidebar({ recipes, collapsed: controlledCollapsed, onCollapsedChange }: RecipeSidebarProps) {
+  const [internalCollapsed, setInternalCollapsed] = useState(false);
+  const collapsed = controlledCollapsed !== undefined ? controlledCollapsed : internalCollapsed;
+  const setCollapsed = onCollapsedChange || setInternalCollapsed;
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("全部");
   const [width, setWidth] = useState(240); // 默认宽度 220 和 256 的中间

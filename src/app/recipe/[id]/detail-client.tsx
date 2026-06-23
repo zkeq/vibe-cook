@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { Recipe } from "@/lib/types";
 import { mockRecipeList } from "@/lib/mock";
 import {
@@ -16,6 +17,8 @@ interface DetailClientProps {
 }
 
 export function DetailClient({ recipe }: DetailClientProps) {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   return (
     <>
       {/* 点状背景 */}
@@ -30,11 +33,15 @@ export function DetailClient({ recipe }: DetailClientProps) {
 
       <div className="-mt-14 flex min-h-screen pt-14">
         {/* 左侧导航 */}
-        <RecipeSidebar recipes={mockRecipeList} />
+        <RecipeSidebar
+          recipes={mockRecipeList}
+          collapsed={sidebarCollapsed}
+          onCollapsedChange={setSidebarCollapsed}
+        />
 
         {/* 主内容区 */}
-        <main className="relative z-10 flex-1 overflow-y-auto p-8">
-          <div className="h-full rounded-xl border border-border/60 bg-[#fdfdfd] p-8 shadow-sm">
+        <main className={`relative z-10 flex-1 overflow-y-auto ${sidebarCollapsed ? '' : 'pl-6'}`}>
+          <div className="h-full border-l border-t border-b border-border/60 bg-[#fdfdfd] p-8 shadow-sm">
             {/* 顶部标题栏 */}
             <RecipeHeader recipe={recipe} />
 

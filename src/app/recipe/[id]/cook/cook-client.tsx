@@ -301,11 +301,11 @@ export function CookClient({ recipe }: CookClientProps) {
         />
 
         {/* 顶部指令横幅 - 仪表盘风格 */}
-        <div className="h-24 border-b-2 border-border bg-gradient-to-br from-white via-neutral-50/80 to-white flex items-center justify-between px-8 z-10 shrink-0 shadow-md">
+        <div className="min-h-24 border-b-2 border-border bg-gradient-to-br from-white via-neutral-50/80 to-white flex items-center justify-between px-8 py-4 z-10 shrink-0 shadow-md">
           {/* 左侧：状态指示器 + 行动指令 */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-6 min-w-0 flex-1">
             {/* 进度状态 */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 shrink-0">
               <div className="flex flex-col">
                 <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">步骤进度</span>
                 <div className="flex items-baseline gap-1.5 mt-1">
@@ -320,19 +320,19 @@ export function CookClient({ recipe }: CookClientProps) {
             <div className="h-12 w-px bg-border shrink-0" />
 
             {/* 行动指令区 */}
-            <div className="flex flex-col">
+            <div className="flex flex-col min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <div className="h-2 w-2 rounded-full bg-primary animate-pulse shadow-lg shadow-primary/50" />
                 <span className="text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground">ACTION REQUIRED</span>
               </div>
-              <h2 className="text-3xl font-black tracking-tight leading-tight max-w-3xl">
+              <h2 className="text-3xl font-black tracking-tight leading-tight">
                 {renderHighlightedInstruction(currentStepData.instruction)}
               </h2>
             </div>
           </div>
 
           {/* 右侧：控制按钮组 */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0 ml-6">
             {/* 导航控制 - 扁平化上下按钮 */}
             <div className="flex flex-col">
               <button

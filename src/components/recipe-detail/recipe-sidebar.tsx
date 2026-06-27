@@ -166,7 +166,7 @@ export function RecipeSidebar({ recipes, collapsed: controlledCollapsed, onColla
                   key={item.id}
                   href={`/recipe/${item.id}`}
                   className={cn(
-                    "flex items-start gap-2 border-b border-border/60 px-2 py-2",
+                    "flex items-start gap-3 border-b border-border/60 px-3 py-3 transition-colors",
                     active ? "bg-primary/5" : index % 2 === 0 ? "bg-white hover:bg-muted/30" : "bg-muted/10 hover:bg-muted/30"
                   )}
                 >
@@ -177,20 +177,22 @@ export function RecipeSidebar({ recipes, collapsed: controlledCollapsed, onColla
                     <ChefHat className={cn("h-3 w-3", active ? "text-primary" : "text-primary/30")} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className={cn("truncate text-xs font-bold leading-tight tracking-wide", active ? "text-primary" : "text-foreground/80")}>
+                    <div className={cn("truncate text-xs font-bold leading-tight", active ? "text-primary" : "text-foreground")}>
                       {item.title}
                     </div>
                     {item.summary && (
-                      <div className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-muted-foreground/60">{item.summary}</div>
+                      <div className="mt-0.5 truncate text-[10px] leading-relaxed text-muted-foreground/70">{item.summary}</div>
                     )}
-                    <div className="mt-1 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                    <div className="mt-1.5 flex items-center gap-2 text-[10px] text-muted-foreground">
+                      <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary">{item.category}</span>
+                      <span>·</span>
+                      <span>{item.duration_min}min</span>
+                      <span>·</span>
                       <div className="flex items-center gap-0.5">
                         {Array.from({ length: Math.min(item.difficulty || 0, 5) }).map((_, i) => (
-                          <Star key={i} className={cn("h-1.5 w-1.5", active ? "fill-primary text-primary" : "fill-amber-400 text-amber-400")} />
+                          <Star key={i} className={cn("h-2 w-2", active ? "fill-primary text-primary" : "fill-amber-400 text-amber-400")} />
                         ))}
                       </div>
-                      <span>· {item.duration_min}min</span>
-                      <span className="ml-auto rounded bg-background px-1 py-0 text-[9px]">{item.category}</span>
                     </div>
                   </div>
                 </Link>

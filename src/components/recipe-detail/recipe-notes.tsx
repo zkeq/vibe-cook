@@ -5,34 +5,30 @@ interface RecipeNotesProps {
 }
 
 export function RecipeNotes({ recipe }: RecipeNotesProps) {
+  const hasNotes = recipe.variants?.length || recipe.tips?.length;
+  
+  if (!hasNotes) return null;
+
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      {(recipe.variants?.length || recipe.tips?.length) && (
-        <div className="rounded-xl border border-border/60 bg-white p-4">
-          <div className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">注意</div>
-          {recipe.variants && recipe.variants.length > 0 && (
-            <div className="mb-3 space-y-2">
-              {recipe.variants.map((v, i) => (
-                <div key={i}>
-                  <div className="text-sm font-medium text-primary">{v.title}</div>
-                  <div className="text-xs leading-relaxed text-muted-foreground">{v.desc}</div>
-                </div>
-              ))}
+    <div className="rounded-xl border border-border/60 bg-white p-4">
+      <div className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">注意事项</div>
+      {recipe.variants && recipe.variants.length > 0 && (
+        <div className="mb-4 space-y-3">
+          {recipe.variants.map((v, i) => (
+            <div key={i} className="border-l-2 border-primary/40 pl-3">
+              <div className="text-sm font-semibold text-primary">{v.title}</div>
+              <div className="text-xs leading-relaxed text-muted-foreground mt-1">{v.desc}</div>
             </div>
-          )}
-          {recipe.tips && recipe.tips.length > 0 && (
-            <div className="space-y-1">
-              {recipe.tips.map((tip, i) => (
-                <div key={i} className="text-xs leading-relaxed text-muted-foreground">• {tip}</div>
-              ))}
-            </div>
-          )}
+          ))}
         </div>
       )}
-      <div className="rounded-xl border border-border/60 bg-white p-4">
-        <div className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">全解图</div>
-        <div className="aspect-video rounded-lg bg-muted"></div>
-      </div>
+      {recipe.tips && recipe.tips.length > 0 && (
+        <div className="space-y-1.5 border-t border-border/40 pt-3 mt-3">
+          {recipe.tips.map((tip, i) => (
+            <div key={i} className="text-xs leading-relaxed text-muted-foreground">• {tip}</div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

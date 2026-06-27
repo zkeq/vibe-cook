@@ -9,6 +9,7 @@ export const mockRecipe: Recipe = {
   duration_min: 15,
   category: "家常菜",
   cover_image: "",
+  overview_image: "/recipes/overview-guide.jpg",
   tags: ["快手", "下饭", "新手友好"],
   ingredients: [
     { name: "西红柿", amount: "1个(约180g)", per_serving: true },

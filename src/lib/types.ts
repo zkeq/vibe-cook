@@ -53,6 +53,7 @@ export interface Recipe {
   steps: RecipeStep[];
   variants?: RecipeVariant[];
   tips?: string[];
+  overview_image?: string;
 }
 
 /** 列表页轻量字段(后端 list_recipes 返回) */

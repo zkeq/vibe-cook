@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Star, Clock, Flame, Tag, Minus, Plus, Play, ChefHat } from "lucide-react";
+import { Star, Minus, Plus, Play, ChefHat } from "lucide-react";
 import type { Recipe } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { Fancybox as NativeFancybox } from "@fancyapps/ui";
+import "@fancyapps/ui/dist/fancybox/fancybox.css";
 
 interface RecipeHeaderProps {
   recipe: Recipe;
@@ -12,6 +14,28 @@ interface RecipeHeaderProps {
 
 export function RecipeHeader({ recipe }: RecipeHeaderProps) {
   const [servings, setServings] = useState(recipe.servings.base);
+  const [activeTab, setActiveTab] = useState<"cover" | "guide">("cover");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    NativeFancybox.bind(container, "[data-fancybox]", {
+      Toolbar: {
+        display: {
+          left: [],
+          middle: [],
+          right: ["zoom", "slideshow", "fullscreen", "close"],
+        },
+      },
+    });
+
+    return () => {
+      NativeFancybox.unbind(container);
+      NativeFancybox.close();
+    };
+  }, []);
 
   // 计算缩放后的食材
   const scaledIngredients = recipe.ingredients.map((ing) => {
@@ -29,12 +53,84 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
   });
 
   return (
-    <div className="mb-6 rounded-xl bg-white p-4 shadow-sm">
+    <div ref={containerRef} className="mb-6 rounded-xl bg-white p-4 shadow-sm">
       <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-        {/* 左侧：主图 */}
-        <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-gradient-to-br from-orange-50 to-amber-50">
-          <div className="flex h-full items-center justify-center">
-            <ChefHat className="h-16 w-16 text-primary/20" />
+        {/* 左侧：成品图 / 全解图 */}
+        <div className="relative overflow-hidden rounded-lg bg-neutral-50 border border-border self-start lg:self-stretch">
+          {/* 包裹层 - 使用绝对定位确保不撑高 */}
+          <div className="relative w-full h-full flex flex-col">
+            {/* 图片展示区 */}
+            <div className="absolute inset-0 flex flex-col">
+              <div className="relative flex-1 flex items-center justify-center overflow-hidden bg-gradient-to-br from-orange-50/60 to-amber-50/30">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeTab}
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute inset-0 flex items-center justify-center p-4"
+                  >
+                    {activeTab === "cover" ? (
+                      recipe.cover_image && recipe.cover_image !== "" ? (
+                        <img
+                          src={recipe.cover_image}
+                          alt={recipe.title}
+                          className="h-full w-auto object-contain"
+                        />
+                      ) : (
+                        <ChefHat className="h-16 w-16 text-primary/20" />
+                      )
+                    ) : (
+                      recipe.overview_image && (
+                        <a
+                          href={recipe.overview_image}
+                          data-fancybox="gallery"
+                          data-caption="流程全解图"
+                          className="block h-full"
+                        >
+                          <img
+                            src={recipe.overview_image}
+                            alt="流程全解图"
+                            className="h-full w-auto object-contain cursor-zoom-in"
+                          />
+                        </a>
+                      )
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              {/* 切换 Tab - 底部固定 */}
+              {recipe.overview_image && (
+                <div className="flex justify-center p-3 bg-white/50 backdrop-blur-sm border-t border-border/60 shrink-0">
+                  <div className="flex rounded-full bg-white/95 p-0.5 shadow border border-border/80 backdrop-blur-sm">
+                    <button
+                      onClick={() => setActiveTab("cover")}
+                      className={cn(
+                        "rounded-full px-2.5 py-1 text-[10px] font-bold transition-all cursor-pointer",
+                        activeTab === "cover"
+                          ? "bg-primary text-white shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      成品图
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("guide")}
+                      className={cn(
+                        "rounded-full px-2.5 py-1 text-[10px] font-bold transition-all cursor-pointer",
+                        activeTab === "guide"
+                          ? "bg-primary text-white shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      全解图
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -186,8 +282,8 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
             准备完毕，开始烹饪
           </button>
         </div>
+        </div>
       </div>
-    </div>
     </div>
   );
 }

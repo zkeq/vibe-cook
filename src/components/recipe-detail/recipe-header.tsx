@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Star, Minus, Plus, Play, ChefHat } from "lucide-react";
+import Link from "next/link";
 import type { Recipe } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Fancybox as NativeFancybox } from "@fancyapps/ui";
@@ -277,10 +278,13 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
           </div>
 
           {/* 开始烹饪按钮 */}
-          <button className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary/90 hover:shadow">
+          <Link
+            href={`/recipe/${recipe.id}/cook`}
+            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary/90 hover:shadow"
+          >
             <Play className="h-4 w-4" />
             准备完毕，开始烹饪
-          </button>
+          </Link>
         </div>
         </div>
       </div>

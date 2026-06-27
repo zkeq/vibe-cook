@@ -19,6 +19,9 @@ export function Navbar() {
   const visible = phase === "app" || phase === "done";
   const [searchQuery, setSearchQuery] = useState("");
 
+  const isCookPage = pathname ? pathname.endsWith("/cook") : false;
+  if (isCookPage) return null;
+
   return (
     <motion.header
     initial={{ opacity: 0, y: -20 }}

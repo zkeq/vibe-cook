@@ -166,7 +166,7 @@ export function RecipeSidebar({ recipes, collapsed: controlledCollapsed, onColla
                   key={item.id}
                   href={`/recipe/${item.id}`}
                   className={cn(
-                    "flex items-start gap-2 border-b border-border/60 px-2 py-2 transition-colors",
+                    "flex items-start gap-2 border-b border-border/60 px-2 py-2",
                     active ? "bg-primary/5" : index % 2 === 0 ? "bg-white hover:bg-muted/30" : "bg-muted/10 hover:bg-muted/30"
                   )}
                 >

@@ -32,25 +32,22 @@ export function RecipeSteps({ recipe }: RecipeStepsProps) {
     };
   }, [currentStep, recipe.steps.length]);
 
-  // 当步骤切换时，自动滚动到对应位置（仅在步骤列表容器内滚动）
+  // 当步骤切换时，自动滚动到对应位置
   useEffect(() => {
     if (stepsContainerRef.current) {
       const stepElement = stepsContainerRef.current.children[currentStep] as HTMLElement;
       if (stepElement) {
-        // 计算步骤元素在容器内的位置
         const container = stepsContainerRef.current;
-        const stepTop = stepElement.offsetTop;
-        const stepHeight = stepElement.offsetHeight;
-        const containerHeight = container.clientHeight;
-        const containerScrollTop = container.scrollTop;
+        const containerRect = container.getBoundingClientRect();
+        const stepRect = stepElement.getBoundingClientRect();
 
-        // 如果步骤不在可视区域内，则滚动到居中位置
-        if (stepTop < containerScrollTop || stepTop + stepHeight > containerScrollTop + containerHeight) {
-          container.scrollTo({
-            top: stepTop - containerHeight / 2 + stepHeight / 2,
-            behavior: "smooth",
-          });
-        }
+        // 计算步骤相对于容器的位置，留出 32px 的上方空间
+        const offset = stepRect.top - containerRect.top + container.scrollTop - 32;
+
+        container.scrollTo({
+          top: Math.max(0, offset),
+          behavior: "smooth",
+        });
       }
     }
   }, [currentStep]);
@@ -64,22 +61,28 @@ export function RecipeSteps({ recipe }: RecipeStepsProps) {
   return (
     <div>
       <h2 className="mb-4 text-xl font-bold">制作步骤</h2>
-      <div className="grid gap-4 overflow-hidden rounded-xl border border-border/60 bg-white p-4 lg:grid-cols-[1fr_1.4fr]" style={{ height: '60vh' }}>
-        {/* 左：步骤图轮播 上下居中 */}
-        <div className="flex items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-orange-50 to-amber-50">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentStep}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="text-center"
-            >
-              <ChefHat className="mx-auto mb-2 h-20 w-20 text-primary/20" />
-              <div className="text-sm text-muted-foreground">步骤 {currentStep + 1}</div>
-            </motion.div>
-          </AnimatePresence>
+      <div className="grid gap-4 overflow-hidden rounded-xl border border-border/60 bg-white p-4 lg:grid-cols-[400px_1fr]" style={{ height: '60vh' }}>
+        {/* 左：步骤图轮播 16:9 比例 */}
+        <div className="flex items-center justify-center">
+          <div className="w-full max-w-[400px]">
+            <div className="aspect-[16/9] overflow-hidden rounded-xl bg-gradient-to-br from-orange-50 to-amber-50">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentStep}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex h-full items-center justify-center text-center"
+                >
+                  <div>
+                    <ChefHat className="mx-auto mb-2 h-20 w-20 text-primary/20" />
+                    <div className="text-sm text-muted-foreground">步骤 {currentStep + 1}</div>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </div>
         </div>
 
         {/* 右：步骤列表 固定高度可滚动 */}

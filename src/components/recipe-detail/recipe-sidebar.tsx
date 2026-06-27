@@ -89,7 +89,7 @@ export function RecipeSidebar({ recipes, collapsed: controlledCollapsed, onColla
       <aside
         ref={sidebarRef}
         className={cn(
-          "relative z-10 hidden shrink-0 border-r border-border/60 bg-white transition-all duration-300 lg:block",
+          "sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 self-start border-r border-border/60 bg-white transition-all duration-300 lg:block",
           collapsed && "!w-12"
         )}
         style={{ width: collapsed ? undefined : `${width}px` }}

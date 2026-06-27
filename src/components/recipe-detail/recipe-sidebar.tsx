@@ -177,11 +177,11 @@ export function RecipeSidebar({ recipes, collapsed: controlledCollapsed, onColla
                     <ChefHat className={cn("h-3 w-3", active ? "text-primary" : "text-primary/30")} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className={cn("truncate text-xs font-semibold leading-tight", active ? "text-primary" : "text-foreground")}>
+                    <div className={cn("truncate text-xs font-bold leading-tight tracking-wide", active ? "text-primary" : "text-foreground/80")}>
                       {item.title}
                     </div>
                     {item.summary && (
-                      <div className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-muted-foreground">{item.summary}</div>
+                      <div className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-muted-foreground/60">{item.summary}</div>
                     )}
                     <div className="mt-1 flex items-center gap-1.5 text-[10px] text-muted-foreground">
                       <div className="flex items-center gap-0.5">

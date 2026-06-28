@@ -81,10 +81,11 @@ export function Navbar({ onMenuClick, showMenuButton = false }: NavbarProps = {}
         {showMenuButton && (
           <button
             onClick={onMenuClick}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-muted-foreground transition-all hover:bg-muted hover:text-foreground active:scale-95 lg:hidden"
+            className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition-all hover:border-primary/50 hover:bg-muted hover:text-foreground active:scale-95 lg:hidden"
             aria-label="打开菜单"
           >
             <Menu className="h-4 w-4" />
+            <span className="hidden sm:inline">菜单</span>
           </button>
         )}
       </div>

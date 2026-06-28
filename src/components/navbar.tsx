@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChefHat, BookOpen, Search, Menu } from "lucide-react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import { useIntro } from "@/lib/intro-context";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import recipeAPI from "@/services/recipe-api";
+import type { RecipeSummary } from "@/lib/types";
 
 const navItems = [
   { href: "/", label: "食谱", icon: BookOpen },
@@ -23,9 +25,50 @@ export function Navbar({ onMenuClick, showMenuButton = false }: NavbarProps = {}
   const { phase } = useIntro();
   const visible = phase === "app" || phase === "done";
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<RecipeSummary[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   const isCookPage = pathname ? pathname.endsWith("/cook") : false;
   if (isCookPage) return null;
+
+  // 搜索防抖
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setShowResults(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const results = await recipeAPI.searchRecipes(searchQuery);
+        setSearchResults(results);
+        setShowResults(true);
+      } catch (error) {
+        console.error('Search failed:', error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // 点击外部关闭结果
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowResults(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <motion.header
@@ -44,15 +87,65 @@ export function Navbar({ onMenuClick, showMenuButton = false }: NavbarProps = {}
         </Link>
 
         {/* 搜索框 */}
-        <div className="flex max-w-md flex-1 items-center gap-2 rounded-lg bg-muted px-3 py-1.5">
-          <Search className="h-4 w-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="搜索菜谱..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-          />
+        <div ref={searchRef} className="relative flex max-w-md flex-1">
+          <div className="flex w-full items-center gap-2 rounded-lg bg-muted px-3 py-1.5">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="搜索菜谱..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => searchQuery && setShowResults(true)}
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            />
+            {isSearching && (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            )}
+          </div>
+
+          {/* 搜索结果下拉 */}
+          <AnimatePresence>
+            {showResults && searchResults.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="absolute left-0 right-0 top-full mt-2 max-h-96 overflow-y-auto rounded-lg border border-border bg-white shadow-lg"
+              >
+                {searchResults.map((recipe) => (
+                  <Link
+                    key={recipe.id}
+                    href={`/recipe/${recipe.id}`}
+                    onClick={() => {
+                      setShowResults(false);
+                      setSearchQuery("");
+                    }}
+                    className="flex items-start gap-3 border-b border-border p-3 transition-colors hover:bg-muted/50 last:border-b-0"
+                  >
+                    {recipe.cover_image ? (
+                      <img
+                        src={recipe.cover_image}
+                        alt={recipe.title}
+                        className="h-12 w-12 shrink-0 rounded object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-gradient-to-br from-orange-50 to-amber-50">
+                        <ChefHat className="h-5 w-5 text-primary/30" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold text-foreground">{recipe.title}</div>
+                      {recipe.summary && (
+                        <div className="mt-0.5 truncate text-xs text-muted-foreground">{recipe.summary}</div>
+                      )}
+                      <div className="mt-1 text-xs text-muted-foreground">{recipe.category}</div>
+                    </div>
+                  </Link>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Nav links - 桌面端显示 */}

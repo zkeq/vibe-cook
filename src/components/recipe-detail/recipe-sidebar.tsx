@@ -30,6 +30,8 @@ export function RecipeSidebar({
   const setCollapsed = onCollapsedChange || setInternalCollapsed;
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<RecipeSummary[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("全部");
   const [width, setWidth] = useState(240);
   const [tempWidth, setTempWidth] = useState(240);
@@ -155,13 +157,32 @@ export function RecipeSidebar({
     }
   }, [pathname, recipes]);
 
-  // 过滤菜谱（只用于搜索）
-  const filteredRecipes = searchQuery
-    ? recipes.filter((item) =>
-        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.summary?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : recipes;
+  // 搜索菜谱（调用后端 API）
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const results = await recipeAPI.searchRecipes(searchQuery);
+        setSearchResults(results);
+      } catch (error) {
+        console.error('Search failed:', error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // 显示的菜谱列表：搜索时显示搜索结果，否则显示分页列表
+  const filteredRecipes = searchQuery ? searchResults : recipes;
 
   // 拖动处理
   useEffect(() => {
@@ -243,8 +264,11 @@ export function RecipeSidebar({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="搜索..."
-                  className="h-7 w-full rounded-md border border-border/60 bg-background pl-7 pr-2 text-xs outline-none transition-all placeholder:text-muted-foreground focus:border-primary"
+                  className="h-7 w-full rounded-md border border-border/60 bg-background pl-7 pr-8 text-xs outline-none transition-all placeholder:text-muted-foreground focus:border-primary"
                 />
+                {isSearching && (
+                  <div className="absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                )}
               </div>
             )}
             <button

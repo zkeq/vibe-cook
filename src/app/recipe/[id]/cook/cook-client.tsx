@@ -352,44 +352,47 @@ export function CookClient({ recipe }: CookClientProps) {
             </div>
 
             {/* 右侧：控制按钮组 */}
-            <div className="flex items-center gap-3 shrink-0 ml-6">
+            <div className="flex items-start gap-3 shrink-0 ml-6">
               {/* 导航控制 */}
               <div className="flex flex-col gap-2">
+                {/* 上一步 */}
                 <button
                   onClick={handlePrev}
                   disabled={currentStep === 0}
                   className={cn(
-                    "flex items-center justify-center h-12 px-6 text-sm font-bold rounded-lg transition-all active:scale-95 border",
+                    "flex items-center justify-center h-12 px-5 rounded-lg transition-all text-sm font-semibold border",
                     currentStep === 0
-                      ? "bg-neutral-50 text-neutral-300 border-neutral-200 cursor-not-allowed active:scale-100"
-                      : "bg-white text-foreground hover:bg-neutral-50 border-border"
+                      ? "bg-neutral-50 text-neutral-400 border-neutral-200 cursor-not-allowed"
+                      : "bg-white text-neutral-700 hover:bg-neutral-50 border-neutral-300 active:scale-[0.97]"
                   )}
                 >
-                  <ChevronUp className="h-5 w-5 mr-1" />
+                  <ChevronUp className="h-4 w-4 mr-1.5" />
                   上一步
                 </button>
+
+                {/* 下一步 */}
                 <button
                   onClick={handleNext}
                   disabled={currentStep === recipe.steps.length - 1}
                   className={cn(
-                    "flex items-center justify-center h-12 px-6 text-sm font-bold rounded-lg transition-all active:scale-95 border",
+                    "flex items-center justify-center h-12 px-5 rounded-lg transition-all text-sm font-semibold",
                     currentStep === recipe.steps.length - 1
-                      ? "bg-neutral-50 text-neutral-300 border-neutral-200 cursor-not-allowed active:scale-100"
-                      : "bg-white text-foreground hover:bg-neutral-50 border-border"
+                      ? "bg-neutral-50 text-neutral-400 cursor-not-allowed"
+                      : "bg-primary text-white hover:bg-primary/95 active:scale-[0.97]"
                   )}
                 >
-                  <ChevronDown className="h-5 w-5 mr-1" />
                   下一步
+                  <ChevronDown className="h-4 w-4 ml-1.5" />
                 </button>
               </div>
 
               {/* 退出按钮 */}
               <Link
                 href={`/recipe/${recipe.id}`}
-                className="flex items-center justify-center h-[104px] w-12 bg-white text-muted-foreground transition-all hover:bg-red-50 hover:text-red-500 rounded-lg border border-border"
+                className="flex items-center justify-center h-26 w-11 bg-white text-neutral-500 transition-all hover:bg-neutral-50 hover:text-red-500 rounded-lg border border-neutral-300 active:scale-[0.97]"
                 title="退出烹饪模式"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4.5 w-4.5" />
               </Link>
             </div>
           </div>

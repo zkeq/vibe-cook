@@ -61,7 +61,7 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
           right: ["zoom", "slideshow", "fullscreen", "close"],
         },
       },
-    });
+    } as any);
 
     return () => {
       NativeFancybox.unbind(container);

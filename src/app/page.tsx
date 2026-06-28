@@ -41,7 +41,9 @@ export default function HomePage() {
 
   // 页面加载时获取菜谱列表
   useEffect(() => {
-    fetchRecipeList(1);
+    // "全部" 时传 undefined，否则传具体分类
+    const category = selectedCategory === "全部" ? undefined : selectedCategory;
+    fetchRecipeList(1, category);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory]);
 
@@ -155,7 +157,10 @@ export default function HomePage() {
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            onPageChange={(page) => fetchRecipeList(page)}
+            onPageChange={(page) => {
+              const category = selectedCategory === "全部" ? undefined : selectedCategory;
+              fetchRecipeList(page, category);
+            }}
             className="mt-8"
           />
         )}

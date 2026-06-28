@@ -78,3 +78,12 @@ body {
 .animate-marquee-left  { animation: marquee-left  28s linear infinite; }
 .animate-marquee-right { animation: marquee-right 28s linear infinite; }
 
+/* 隐藏滚动条实用类 */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+

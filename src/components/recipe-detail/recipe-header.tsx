@@ -8,56 +8,46 @@ import type { Recipe } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Fancybox as NativeFancybox } from "@fancyapps/ui";
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
+import { useUserSettingsStore } from "@/store/user-settings-store";
 
 interface RecipeHeaderProps {
   recipe: Recipe;
 }
 
 export function RecipeHeader({ recipe }: RecipeHeaderProps) {
-  const [servings, setServings] = useState(recipe.servings.base);
   const [activeTab, setActiveTab] = useState<"cover" | "guide">("cover");
-  const [checkedIngredients, setCheckedIngredients] = useState<Set<string>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // 从 localStorage 加载份数
-  useEffect(() => {
-    const saved = localStorage.getItem(`recipe-servings-${recipe.id}`);
-    if (saved) {
-      setServings(parseInt(saved, 10));
-    }
-  }, [recipe.id]);
+  // 使用全局状态管理份数
+  const { servings: globalServings, setServings: setGlobalServings } = useUserSettingsStore();
+  const servings = globalServings[recipe.id] || recipe.servings.base;
+  const setServings = (value: number) => setGlobalServings(recipe.id, value);
 
-  // 保存份数到 localStorage
-  useEffect(() => {
-    localStorage.setItem(`recipe-servings-${recipe.id}`, servings.toString());
-  }, [servings, recipe.id]);
+  // 使用全局状态管理采购清单勾选
+  const { getShoppingList } = useUserSettingsStore();
+  const [checkedIngredients, setCheckedIngredients] = useState<Set<string>>(new Set());
 
-  // 从 localStorage 加载勾选状态
+  // 加载勾选状态
   useEffect(() => {
-    const saved = localStorage.getItem(`shopping-list-${recipe.id}`);
-    if (saved) {
-      setCheckedIngredients(new Set(JSON.parse(saved)));
-    }
-  }, [recipe.id]);
+    const shoppingList = getShoppingList(recipe.id);
+    setCheckedIngredients(shoppingList);
+  }, [recipe.id, getShoppingList]);
 
   // 监听 storage 事件，同步采购清单的勾选状态
   useEffect(() => {
     const handleStorageChange = () => {
-      const saved = localStorage.getItem(`shopping-list-${recipe.id}`);
-      if (saved) {
-        setCheckedIngredients(new Set(JSON.parse(saved)));
-      }
+      const shoppingList = getShoppingList(recipe.id);
+      setCheckedIngredients(shoppingList);
     };
 
     window.addEventListener("storage", handleStorageChange);
-    // 也监听自定义事件，用于同一页面内的更新
     window.addEventListener("shopping-list-updated", handleStorageChange);
 
     return () => {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("shopping-list-updated", handleStorageChange);
     };
-  }, [recipe.id]);
+  }, [recipe.id, getShoppingList]);
 
   useEffect(() => {
     const container = containerRef.current;

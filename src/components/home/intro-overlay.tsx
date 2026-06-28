@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ChefHat } from "lucide-react";
 import { useIntro } from "@/lib/intro-context";
-import { mockRecipeList } from "@/lib/mock";
+import { useRecipeStore } from "@/store/recipe-store";
 import type { RecipeSummary } from "@/lib/types";
 import { CATEGORY_GRAD } from "./recipe-card";
 import { HeroLeft } from "./hero-left";
@@ -72,7 +72,7 @@ function MarqueeRow({
 }
 
 /* ── 第二屏：深色背景 + 多行不同速度的 marquee ── */
-function WaterfallPhase() {
+function WaterfallPhase({ items }: { items: RecipeSummary[] }) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -84,7 +84,7 @@ function WaterfallPhase() {
       {ROW_SPEEDS.map((speed, i) => (
         <MarqueeRow
           key={i}
-          items={i % 2 === 0 ? mockRecipeList : [...mockRecipeList].reverse()}
+          items={i % 2 === 0 ? items : [...items].reverse()}
           speed={speed}
           reverse={i % 2 === 1}
         />
@@ -107,7 +107,7 @@ function WaterfallPhase() {
           className="rounded-2xl px-8 py-5 text-center"
           style={{ background: "rgba(255,255,255,0.75)", backdropFilter: "blur(12px)", border: "1px solid #e5e5e5" }}
         >
-          <span className="block text-5xl font-black" style={{ color: "#1a1a1a" }}>{mockRecipeList.length}+</span>
+          <span className="block text-5xl font-black" style={{ color: "#1a1a1a" }}>{items.length}+</span>
           <span className="mt-1 block text-sm font-semibold tracking-widest" style={{ color: "#737373" }}>
             道精选食谱
           </span>
@@ -120,7 +120,15 @@ function WaterfallPhase() {
 /* ── 主 Overlay ── */
 export function IntroOverlay() {
   const { phase, advance, skip } = useIntro();
+  const { recipeList, fetchRecipeList } = useRecipeStore();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 加载菜谱列表
+  useEffect(() => {
+    if (recipeList.length === 0) {
+      fetchRecipeList();
+    }
+  }, [recipeList.length, fetchRecipeList]);
 
   useEffect(() => {
     if (phase === "hero") {
@@ -221,7 +229,7 @@ export function IntroOverlay() {
                   transition={{ duration: 0.4 }}
                   className="absolute inset-0"
                 >
-                  <WaterfallPhase />
+                  <WaterfallPhase items={recipeList} />
                 </motion.div>
               )}
             </AnimatePresence>

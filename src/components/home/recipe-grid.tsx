@@ -6,7 +6,30 @@ import { CATEGORY_GRAD } from "./recipe-card";
 const DIFF_LABEL = ["", "简单", "普通", "有点难", "挑战", "大师"];
 const DIFF_DOT   = ["", "bg-emerald-400", "bg-blue-400", "bg-yellow-400", "bg-orange-400", "bg-red-400"];
 
-export function RecipeGrid({ items }: { items: RecipeSummary[] }) {
+export function RecipeGrid({ items, isLoading }: { items: RecipeSummary[]; isLoading?: boolean }) {
+  if (isLoading) {
+    return (
+      <section className="mx-auto max-w-3xl px-6 py-10">
+        <div className="mb-5 flex items-baseline justify-between">
+          <h2 className="text-base font-bold text-foreground">所有食谱</h2>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="animate-pulse">
+              <div className="overflow-hidden rounded-2xl border border-border bg-white">
+                <div className="h-36 bg-neutral-100" />
+                <div className="p-3 space-y-2">
+                  <div className="h-4 bg-neutral-200 rounded w-3/4" />
+                  <div className="h-3 bg-neutral-100 rounded w-full" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="mx-auto max-w-3xl px-6 py-10">
       <div className="mb-5 flex items-baseline justify-between">

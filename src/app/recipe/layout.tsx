@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { mockRecipeList } from "@/lib/mock";
+import { useRecipeStore } from "@/store/recipe-store";
 import { RecipeSidebar } from "@/components/recipe-detail";
 import { Navbar } from "@/components/navbar";
 
@@ -14,9 +14,18 @@ export default function RecipeLayout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { recipeList, fetchRecipeList } = useRecipeStore();
+
   const isCookPage = pathname ? pathname.endsWith("/cook") : false;
   const isShoppingPage = pathname ? pathname.endsWith("/shopping") : false;
   const isFullscreenPage = isCookPage || isShoppingPage;
+
+  // 加载菜谱列表（用于侧边栏）
+  useEffect(() => {
+    if (recipeList.length === 0 && !isFullscreenPage) {
+      fetchRecipeList();
+    }
+  }, [recipeList.length, isFullscreenPage, fetchRecipeList]);
 
   return (
     <>
@@ -32,7 +41,7 @@ export default function RecipeLayout({
         {/* 左侧导航 - 在 layout 层级，不会因为页面切换而重新挂载 */}
         {!isFullscreenPage && (
           <RecipeSidebar
-            recipes={mockRecipeList}
+            recipes={recipeList}
             collapsed={sidebarCollapsed}
             onCollapsedChange={setSidebarCollapsed}
             mobileOpen={mobileMenuOpen}

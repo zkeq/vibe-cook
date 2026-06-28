@@ -1,8 +1,9 @@
 "use client";
 
+import { useEffect } from "react";
 import { Star } from "lucide-react";
 import { motion } from "motion/react";
-import { mockRecipeList } from "@/lib/mock";
+import { useRecipeStore } from "@/store/recipe-store";
 import { DotBg }      from "@/components/home/dot-bg";
 import { HeroLeft }   from "@/components/home/hero-left";
 import { HeroRight }  from "@/components/home/hero-right";
@@ -13,7 +14,15 @@ import { useIntro }   from "@/lib/intro-context";
 
 export default function HomePage() {
   const { phase } = useIntro();
+  const { recipeList, fetchRecipeList, isLoading } = useRecipeStore();
   const entered = phase === "app" || phase === "done";
+
+  // 页面加载时获取菜谱列表
+  useEffect(() => {
+    if (recipeList.length === 0) {
+      fetchRecipeList();
+    }
+  }, [fetchRecipeList, recipeList.length]);
 
   const fadeUp = (delay: number) =>
     entered
@@ -64,13 +73,19 @@ export default function HomePage() {
           <Star className="h-4 w-4 text-primary" />
           <span className="text-sm font-semibold text-foreground">食谱一览</span>
           <span className="text-xs text-muted-foreground">
-            — {mockRecipeList.length} 道精选，持续更新
+            — {recipeList.length} 道精选，持续更新
           </span>
         </div>
-        <div className="flex flex-col gap-3 pt-2">
-          <Marquee items={mockRecipeList} />
-          <Marquee items={[...mockRecipeList].reverse()} reverse />
-        </div>
+        {isLoading ? (
+          <div className="text-center text-sm text-muted-foreground py-8">
+            加载中...
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3 pt-2">
+            <Marquee items={recipeList} />
+            <Marquee items={[...recipeList].reverse()} reverse />
+          </div>
+        )}
       </motion.section>
 
       {/* 食谱网格 */}
@@ -79,7 +94,7 @@ export default function HomePage() {
         animate={fadeUp(0.48)}
         transition={trans(0.48)}
       >
-        <RecipeGrid items={mockRecipeList} />
+        <RecipeGrid items={recipeList} isLoading={isLoading} />
       </motion.div>
     </main>
   );

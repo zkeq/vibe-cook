@@ -6,6 +6,7 @@ import { ArrowLeft, ShoppingCart, Check, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Recipe } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useUserSettingsStore } from "@/store/user-settings-store";
 
 interface ShoppingClientProps {
   recipe: Recipe;
@@ -13,50 +14,36 @@ interface ShoppingClientProps {
 
 export function ShoppingClient({ recipe }: ShoppingClientProps) {
   const router = useRouter();
+
+  // 使用全局状态管理勾选状态
+  const {
+    getShoppingList,
+    toggleShoppingItem,
+    clearShoppingList: clearGlobalShoppingList,
+    servings: globalServings
+  } = useUserSettingsStore();
+
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
-  const [servings, setServings] = useState(recipe.servings.base);
+  const servings = globalServings[recipe.id] || recipe.servings.base;
 
-  // 从 localStorage 加载份数
+  // 加载勾选状态
   useEffect(() => {
-    const savedServings = localStorage.getItem(`recipe-servings-${recipe.id}`);
-    if (savedServings) {
-      setServings(parseInt(savedServings, 10));
-    }
-  }, [recipe.id]);
-
-  // 从 localStorage 加载勾选状态
-  useEffect(() => {
-    const saved = localStorage.getItem(`shopping-list-${recipe.id}`);
-    if (saved) {
-      setCheckedItems(new Set(JSON.parse(saved)));
-    }
-  }, [recipe.id]);
-
-  // 保存勾选状态到 localStorage
-  useEffect(() => {
-    localStorage.setItem(
-      `shopping-list-${recipe.id}`,
-      JSON.stringify(Array.from(checkedItems))
-    );
-    // 触发自定义事件，通知其他组件更新
-    window.dispatchEvent(new Event("shopping-list-updated"));
-  }, [checkedItems, recipe.id]);
+    const shoppingList = getShoppingList(recipe.id);
+    setCheckedItems(shoppingList);
+  }, [recipe.id, getShoppingList]);
 
   const toggleItem = (ingredientKey: string) => {
-    setCheckedItems((prev) => {
-      const next = new Set(prev);
-      if (next.has(ingredientKey)) {
-        next.delete(ingredientKey);
-      } else {
-        next.add(ingredientKey);
-      }
-      return next;
-    });
+    toggleShoppingItem(recipe.id, ingredientKey);
+    // 立即更新本地状态以获得即时反馈
+    setCheckedItems(getShoppingList(recipe.id));
+    // 触发自定义事件，通知其他组件更新
+    window.dispatchEvent(new Event("shopping-list-updated"));
   };
 
   const clearAll = () => {
+    clearGlobalShoppingList(recipe.id);
     setCheckedItems(new Set());
-    localStorage.removeItem(`shopping-list-${recipe.id}`);
+    window.dispatchEvent(new Event("shopping-list-updated"));
   };
 
   const totalItems = recipe.ingredients.length;

@@ -83,7 +83,7 @@ export function ShoppingClient({ recipe }: ShoppingClientProps) {
     <div className="flex flex-col h-screen bg-white">
       {/* 顶部栏 */}
       <header className="bg-white border-b-2 border-border shadow-sm shrink-0 z-10" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="flex items-center justify-between px-4 py-4">
+        <div className="max-w-6xl mx-auto flex items-center justify-between px-4 lg:px-6 py-4">
           <button
             onClick={() => router.back()}
             className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-muted-foreground hover:bg-neutral-200 active:scale-95 transition-all"
@@ -112,7 +112,7 @@ export function ShoppingClient({ recipe }: ShoppingClientProps) {
         </div>
 
         {/* 进度条 */}
-        <div className="px-4 pb-4">
+        <div className="max-w-6xl mx-auto px-4 lg:px-6 pb-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-muted-foreground">
               已购买 {checkedCount}/{totalItems}
@@ -138,7 +138,9 @@ export function ShoppingClient({ recipe }: ShoppingClientProps) {
       </header>
 
       {/* 食材列表 */}
-      <div className="flex-1 overflow-y-auto p-4 pb-6 space-y-2">{scaledIngredients.map((ingredient, index) => {
+      <div className="flex-1 overflow-y-auto p-4 pb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 lg:gap-3 max-w-6xl mx-auto">
+          {scaledIngredients.map((ingredient, index) => {
           // 构建唯一key
           const ingredientKey = typeof ingredient === 'string'
             ? ingredient
@@ -239,11 +241,12 @@ export function ShoppingClient({ recipe }: ShoppingClientProps) {
             </motion.button>
           );
         })}
+        </div>
       </div>
 
       {/* 底部完成按钮 */}
       <footer className="bg-white border-t-2 border-border shrink-0 shadow-2xl" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        <div className="p-4">
+        <div className="max-w-6xl mx-auto p-4 lg:px-6">
           <button
             onClick={() => router.back()}
             className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-4 text-base font-bold text-white shadow-md transition-all hover:bg-primary/90 active:scale-98"

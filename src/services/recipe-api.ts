@@ -78,6 +78,14 @@ export const recipeAPI = {
     const response = await fetchAPI<{ data: RecipeSummary[] }>(`/recipes/random?limit=${limit}`);
     return response.data;
   },
+
+  /**
+   * 获取所有分类
+   */
+  getCategories: async (): Promise<string[]> => {
+    const response = await fetchAPI<{ data: string[] }>('/recipes/categories');
+    return response.data;
+  },
 };
 
 export default recipeAPI;

@@ -2,16 +2,46 @@ import type { RecipeSummary } from "@/lib/types";
 import Link from "next/link";
 import { ChefHat, Clock } from "lucide-react";
 import { CATEGORY_GRAD } from "./recipe-card";
+import { cn } from "@/lib/utils";
 
 const DIFF_LABEL = ["", "简单", "普通", "有点难", "挑战", "大师"];
 const DIFF_DOT   = ["", "bg-emerald-400", "bg-blue-400", "bg-yellow-400", "bg-orange-400", "bg-red-400"];
 
-export function RecipeGrid({ items, isLoading }: { items: RecipeSummary[]; isLoading?: boolean }) {
+interface RecipeGridProps {
+  items: RecipeSummary[];
+  isLoading?: boolean;
+  categories?: string[];
+  selectedCategory?: string;
+  onCategoryChange?: (category: string) => void;
+  totalCount?: number;
+}
+
+export function RecipeGrid({
+  items,
+  isLoading,
+  categories = [],
+  selectedCategory = "全部",
+  onCategoryChange,
+  totalCount
+}: RecipeGridProps) {
   if (isLoading) {
     return (
       <section className="mx-auto max-w-3xl px-6 py-10">
-        <div className="mb-5 flex items-baseline justify-between">
-          <h2 className="text-base font-bold text-foreground">所有食谱</h2>
+        <div className="mb-5">
+          <h2 className="text-base font-bold text-foreground mb-3">所有食谱</h2>
+          {categories.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  disabled
+                  className="rounded-lg px-3 py-1.5 text-xs font-medium bg-white text-muted-foreground border border-border"
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -32,9 +62,31 @@ export function RecipeGrid({ items, isLoading }: { items: RecipeSummary[]; isLoa
 
   return (
     <section className="mx-auto max-w-3xl px-6 py-10">
-      <div className="mb-5 flex items-baseline justify-between">
-        <h2 className="text-base font-bold text-foreground">所有食谱</h2>
-        <span className="text-xs text-muted-foreground">{items.length} 道</span>
+      <div className="mb-5">
+        <div className="flex items-baseline justify-between mb-3">
+          <h2 className="text-base font-bold text-foreground">所有食谱</h2>
+          <span className="text-xs text-muted-foreground">{totalCount || items.length} 道</span>
+        </div>
+
+        {/* 分类筛选 */}
+        {categories.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => onCategoryChange?.(cat)}
+                className={cn(
+                  "rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
+                  selectedCategory === cat
+                    ? "bg-primary text-white shadow-sm"
+                    : "bg-white text-muted-foreground hover:bg-muted hover:text-foreground border border-border"
+                )}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {items.map((r) => {

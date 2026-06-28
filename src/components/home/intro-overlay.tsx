@@ -134,9 +134,26 @@ function WaterfallPhase({ items, totalCount }: { items: RecipeSummary[]; totalCo
 /* ── 主 Overlay ── */
 export function IntroOverlay() {
   const { phase, advance, skip } = useIntro();
-  const { recipeList } = useRecipeStore();
+  const { recipeList, totalRecipes } = useRecipeStore();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [displayRecipes, setDisplayRecipes] = useState<RecipeSummary[]>([]);
+  const [localTotal, setLocalTotal] = useState(0);
+
+  // 获取统计数据（开场动画专用）
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/recipes/stats`);
+        const data = await response.json();
+        if (data.total) {
+          setLocalTotal(data.total);
+        }
+      } catch (error) {
+        console.error('Failed to load stats:', error);
+      }
+    };
+    loadStats();
+  }, []);
 
   // 加载随机菜谱用于首屏动画
   useEffect(() => {
@@ -252,7 +269,7 @@ export function IntroOverlay() {
                   transition={{ duration: 0.4 }}
                   className="absolute inset-0"
                 >
-                  <WaterfallPhase items={displayRecipes} totalCount={recipeList.length} />
+                  <WaterfallPhase items={displayRecipes} totalCount={localTotal || totalRecipes || 50} />
                 </motion.div>
               )}
             </AnimatePresence>

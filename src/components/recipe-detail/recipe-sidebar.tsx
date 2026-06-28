@@ -7,17 +7,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { RecipeSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { Pagination } from "@/components/ui/pagination";
+import recipeAPI from "@/services/recipe-api";
 
 interface RecipeSidebarProps {
-  recipes: RecipeSummary[];
   collapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
   mobileOpen?: boolean;
   onMobileOpenChange?: (open: boolean) => void;
 }
 
+const LIMIT_PER_PAGE = 24;
+
 export function RecipeSidebar({
-  recipes,
   collapsed: controlledCollapsed,
   onCollapsedChange,
   mobileOpen: controlledMobileOpen,
@@ -26,17 +28,28 @@ export function RecipeSidebar({
   const [internalCollapsed, setInternalCollapsed] = useState(false);
   const collapsed = controlledCollapsed !== undefined ? controlledCollapsed : internalCollapsed;
   const setCollapsed = onCollapsedChange || setInternalCollapsed;
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("全部");
   const [width, setWidth] = useState(240);
   const [tempWidth, setTempWidth] = useState(240);
   const [isDragging, setIsDragging] = useState(false);
   const [mounted, setMounted] = useState(false);
+
   const [internalMobileOpen, setInternalMobileOpen] = useState(false);
   const mobileOpen = controlledMobileOpen !== undefined ? controlledMobileOpen : internalMobileOpen;
   const setMobileOpen = onMobileOpenChange || setInternalMobileOpen;
+
   const sidebarRef = useRef<HTMLElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+
+  // 从后端加载的数据
+  const [categories, setCategories] = useState<string[]>(["全部"]);
+  const [recipes, setRecipes] = useState<RecipeSummary[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
 
   // 从 localStorage 读取保存的宽度
   useEffect(() => {
@@ -51,17 +64,104 @@ export function RecipeSidebar({
     }
   }, []);
 
-  // 提取所有分类
-  const categories = ["全部", ...Array.from(new Set(recipes.map((r) => r.category)))];
+  // 加载分类列表
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const cats = await recipeAPI.getCategories();
+        setCategories(["全部", ...cats]);
+      } catch (error) {
+        console.error('Failed to load categories:', error);
+      }
+    };
+    loadCategories();
+  }, []);
 
-  // 过滤菜谱
-  const filteredRecipes = recipes.filter((item) => {
-    const matchCategory = selectedCategory === "全部" || item.category === selectedCategory;
-    const matchSearch =
-      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.summary?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchCategory && matchSearch;
-  });
+  // 加载菜谱列表
+  useEffect(() => {
+    const loadRecipes = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/recipes?page=${currentPage}&limit=${LIMIT_PER_PAGE}${
+            selectedCategory !== '全部' ? `&category=${selectedCategory}` : ''
+          }`
+        );
+        const data = await response.json();
+
+        setRecipes(data.data || []);
+        setTotalPages(Math.ceil((data.total || 0) / LIMIT_PER_PAGE));
+      } catch (error) {
+        console.error('Failed to load recipes:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadRecipes();
+  }, [currentPage, selectedCategory]);
+
+  // 初始化：根据当前菜谱ID获取所在页码
+  useEffect(() => {
+    const initPageFromRecipe = async () => {
+      if (!pathname) return;
+
+      const currentId = pathname.split('/recipe/')[1]?.split('/')[0];
+      if (!currentId) return;
+
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/recipes/${currentId}/page${
+            selectedCategory !== '全部' ? `?category=${selectedCategory}` : ''
+          }`
+        );
+        const data = await response.json();
+
+        if (data.page && data.page !== currentPage) {
+          setCurrentPage(data.page);
+        }
+      } catch (error) {
+        console.error('Failed to get recipe page:', error);
+      }
+    };
+
+    initPageFromRecipe();
+  }, [pathname, selectedCategory]); // 只在pathname或分类变化时执行
+
+  // 切换分类时重置到第一页
+  const handleCategoryChange = (cat: string) => {
+    setSelectedCategory(cat);
+    setCurrentPage(1);
+  };
+
+  // 切换页码
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // 滚动列表到顶部
+    if (listRef.current) {
+      listRef.current.scrollTop = 0;
+    }
+  };
+
+  // 滚动到当前菜谱
+  useEffect(() => {
+    if (!listRef.current || !pathname) return;
+
+    const currentId = pathname.split('/recipe/')[1]?.split('/')[0];
+    if (!currentId) return;
+
+    const activeElement = listRef.current.querySelector(`[href="/recipe/${currentId}"]`);
+    if (activeElement) {
+      activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [pathname, recipes]);
+
+  // 过滤菜谱（只用于搜索）
+  const filteredRecipes = searchQuery
+    ? recipes.filter((item) =>
+        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.summary?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : recipes;
 
   // 拖动处理
   useEffect(() => {
@@ -163,7 +263,7 @@ export function RecipeSidebar({
                 {categories.map((cat) => (
                   <button
                     key={cat}
-                    onClick={() => setSelectedCategory(cat)}
+                    onClick={() => handleCategoryChange(cat)}
                     className={cn(
                       "rounded px-2 py-0.5 text-[10px] font-medium transition-colors",
                       selectedCategory === cat
@@ -179,8 +279,17 @@ export function RecipeSidebar({
           )}
 
           {/* 菜谱列表 - 表格式 */}
-          <div className="flex-1 overflow-y-auto">
-            {filteredRecipes.map((item, index) => {
+          <div ref={listRef} className="flex-1 overflow-y-auto">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-sm text-muted-foreground">加载中...</div>
+              </div>
+            ) : filteredRecipes.length === 0 ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-sm text-muted-foreground">暂无菜谱</div>
+              </div>
+            ) : (
+              filteredRecipes.map((item, index) => {
               const active = pathname.includes(item.id);
 
               if (collapsed) {
@@ -235,8 +344,35 @@ export function RecipeSidebar({
                   </div>
                 </Link>
               );
-            })}
+            }))}
           </div>
+
+          {/* 分页器 - 固定在底部 */}
+          {!collapsed && !searchQuery && totalPages > 1 && (
+            <div className="shrink-0 border-t border-border/60 bg-white px-2 py-2">
+              <div className="flex items-center justify-between gap-1 text-xs">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="flex h-7 w-7 items-center justify-center rounded border border-border bg-background transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <ChevronLeft className="h-3 w-3" />
+                </button>
+
+                <span className="text-xs text-muted-foreground">
+                  {currentPage} / {totalPages}
+                </span>
+
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="flex h-7 w-7 items-center justify-center rounded border border-border bg-background transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <ChevronRight className="h-3 w-3" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 可拖动分割线 */}

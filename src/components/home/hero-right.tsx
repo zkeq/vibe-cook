@@ -49,6 +49,8 @@ export function HeroRight({ interval = 2800 }: { interval?: number }) {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/recipes/stats`);
         const data = await response.json();
 
+        console.log('HeroRight stats response:', data);
+
         if (data.total) {
           setTotalRecipes(data.total);
         }

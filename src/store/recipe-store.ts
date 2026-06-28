@@ -55,14 +55,15 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
     }
   },
 
-  fetchRecipeList: async (page = 1) => {
+  fetchRecipeList: async (page = 1, category?: string) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/recipes?page=${page}&limit=${LIMIT_PER_PAGE}`
-      );
+      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/recipes?page=${page}&limit=${LIMIT_PER_PAGE}${
+        category ? `&category=${category}` : ''
+      }`;
+      const response = await fetch(url);
       const data = await response.json();
-      
+
       set({
         recipeList: data.data || [],
         currentPage: data.page || page,

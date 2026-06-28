@@ -14,18 +14,39 @@ import { Marquee }    from "@/components/home/marquee";
 import { RecipeGrid } from "@/components/home/recipe-grid";
 import { Pagination } from "@/components/ui/pagination";
 import { useIntro }   from "@/lib/intro-context";
+import { cn } from "@/lib/utils";
 
 export default function HomePage() {
   const { phase } = useIntro();
-  const { recipeList, fetchRecipeList, isLoading, currentPage, totalPages, setCurrentPage } = useRecipeStore();
+  const { recipeList, fetchRecipeList, isLoading, currentPage, totalPages, setCurrentPage, totalRecipes } = useRecipeStore();
   const [marqueeRecipes, setMarqueeRecipes] = useState<RecipeSummary[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("全部");
   const entered = phase === "app" || phase === "done";
 
-  // 页面加载时获取菜谱列表（只执行一次）
+  // 加载分类列表
   useEffect(() => {
-    fetchRecipeList();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const loadCategories = async () => {
+      try {
+        const cats = await recipeAPI.getCategories();
+        setCategories(["全部", ...cats]);
+      } catch (error) {
+        console.error('Failed to load categories:', error);
+      }
+    };
+    loadCategories();
   }, []);
+
+  // 页面加载时获取菜谱列表
+  useEffect(() => {
+    fetchRecipeList(1, selectedCategory === "全部" ? undefined : selectedCategory);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategory]);
+
+  // 调试：打印 totalRecipes
+  useEffect(() => {
+    console.log('HomePage totalRecipes:', totalRecipes);
+  }, [totalRecipes]);
 
   // 获取随机菜谱用于 Marquee
   useEffect(() => {
@@ -39,6 +60,10 @@ export default function HomePage() {
     };
     loadMarqueeData();
   }, []);
+
+  const handleCategoryChange = (cat: string) => {
+    setSelectedCategory(cat);
+  };
 
   const fadeUp = (delay: number) =>
     entered
@@ -89,7 +114,7 @@ export default function HomePage() {
           <Star className="h-4 w-4 text-primary" />
           <span className="text-sm font-semibold text-foreground">食谱一览</span>
           <span className="text-xs text-muted-foreground">
-            — {recipeList.length} 道精选，持续更新
+            — {totalRecipes} 道精选，持续更新
           </span>
         </div>
         {isLoading ? (
@@ -111,14 +136,21 @@ export default function HomePage() {
         transition={trans(0.48)}
         className="pb-8"
       >
-        <RecipeGrid items={recipeList} isLoading={isLoading} />
+        <RecipeGrid
+          items={recipeList}
+          isLoading={isLoading}
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onCategoryChange={handleCategoryChange}
+          totalCount={totalRecipes}
+        />
 
         {/* 分页器 */}
         {!isLoading && totalPages > 1 && (
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            onPageChange={setCurrentPage}
+            onPageChange={(page) => fetchRecipeList(page, selectedCategory === "全部" ? undefined : selectedCategory)}
             className="mt-8"
           />
         )}

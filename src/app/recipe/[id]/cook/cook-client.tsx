@@ -196,10 +196,10 @@ export function CookClient({ recipe }: CookClientProps) {
   return (
     <div className="flex h-screen bg-neutral-50 text-foreground overflow-hidden">
 
-      {/* 左侧栏 - 仪表盘式垂直目录 */}
+      {/* 左侧栏 - 仪表盘式垂直目录 - 桌面端显示，移动端隐藏 */}
       <aside
         ref={sidebarRef}
-        className="flex flex-col border-r border-border bg-white z-20 shrink-0 relative"
+        className="hidden lg:flex flex-col border-r border-border bg-white z-20 shrink-0 relative"
         style={{ width: isDragging ? `${tempWidth}px` : `${sidebarWidth}px` }}
       >
         {/* 菜名和简介 */}
@@ -300,8 +300,8 @@ export function CookClient({ recipe }: CookClientProps) {
           }}
         />
 
-        {/* 顶部指令横幅 - 仪表盘风格 */}
-        <div className="min-h-24 border-b-2 border-border bg-gradient-to-br from-white via-neutral-50/80 to-white flex items-center justify-between px-8 py-4 z-10 shrink-0 shadow-md">
+        {/* 桌面端：顶部指令横幅 */}
+        <div className="hidden lg:flex min-h-24 border-b-2 border-border bg-gradient-to-br from-white via-neutral-50/80 to-white items-center justify-between px-8 py-4 z-10 shrink-0 shadow-md">
           {/* 左侧：状态指示器 + 行动指令 */}
           <div className="flex items-center gap-6 min-w-0 flex-1">
             {/* 进度状态 */}
@@ -333,7 +333,7 @@ export function CookClient({ recipe }: CookClientProps) {
 
           {/* 右侧：控制按钮组 */}
           <div className="flex items-center gap-3 shrink-0 ml-6">
-            {/* 导航控制 - 扁平化上下按钮 */}
+            {/* 导航控制 */}
             <div className="flex flex-col">
               <button
                 onClick={handlePrev}
@@ -374,13 +374,108 @@ export function CookClient({ recipe }: CookClientProps) {
           </div>
         </div>
 
-        {/* 内容区 (7:3 左右分栏) */}
-        <div className="flex-1 grid grid-cols-10 gap-6 p-6 z-10 overflow-hidden">
+        {/* 移动端：顶部步骤进度条 */}
+        <div className="lg:hidden bg-white border-b-2 border-border z-10 shrink-0 shadow-sm">
+          <div className="p-3">
+            <div className="grid grid-cols-10 gap-3">
+              {/* 左侧：步骤进度条 - 8列 */}
+              <div className="col-span-8 flex gap-2 overflow-x-auto scrollbar-hide">
+                {recipe.steps.map((step, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentStep(i)}
+                    className={cn(
+                      "shrink-0 min-w-[140px] rounded-lg border-2 p-3 flex items-start gap-2 transition-all relative",
+                      i === currentStep
+                        ? "border-primary bg-primary/5 shadow-sm"
+                        : i < currentStep
+                        ? "border-neutral-800 bg-neutral-50"
+                        : "border-border bg-white hover:border-primary/30"
+                    )}
+                  >
+                    {/* 当前步骤左侧橙色线条 */}
+                    {i === currentStep && (
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-lg" />
+                    )}
 
-          {/* 左侧 70% 布局 */}
-          <div className="col-span-7 flex flex-col gap-6 h-full overflow-hidden">
-            
-            {/* 上面 80%：步骤图 / 倒计时仪表盘 */}
+                    {/* 步骤数字圆圈 */}
+                    <div
+                      className={cn(
+                        "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-black border-2 transition-all",
+                        i === currentStep
+                          ? "bg-primary text-white border-primary"
+                          : i < currentStep
+                          ? "bg-neutral-800 text-white border-neutral-800"
+                          : "bg-white text-muted-foreground border-border"
+                      )}
+                    >
+                      {i + 1}
+                    </div>
+
+                    {/* 步骤内容 */}
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className={cn(
+                        "text-xs font-bold line-clamp-2 leading-tight",
+                        i === currentStep
+                          ? "text-foreground"
+                          : i < currentStep
+                          ? "text-muted-foreground"
+                          : "text-muted-foreground"
+                      )}>
+                        {step.instruction}
+                      </p>
+                      {step.duration_sec && (
+                        <div className="flex items-center gap-1 mt-1">
+                          <Clock className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-[9px] text-muted-foreground font-medium">
+                            {Math.ceil(step.duration_sec / 60)}分钟
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* 右侧：上下按钮 - 2列 */}
+              <div className="col-span-2 flex flex-col gap-2">
+                <button
+                  onClick={handlePrev}
+                  disabled={currentStep === 0}
+                  className={cn(
+                    "flex-1 flex items-center justify-center rounded-lg border-2 transition-all shadow-sm",
+                    currentStep === 0
+                      ? "border-border bg-muted/30 text-muted-foreground"
+                      : "border-primary bg-white text-primary active:scale-95 hover:bg-primary/5"
+                  )}
+                >
+                  <ChevronUp className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={handleNext}
+                  disabled={currentStep === recipe.steps.length - 1}
+                  className={cn(
+                    "flex-1 flex items-center justify-center rounded-lg border-2 transition-all shadow-sm",
+                    currentStep === recipe.steps.length - 1
+                      ? "border-border bg-muted/30 text-muted-foreground"
+                      : "border-primary bg-white text-primary active:scale-95 hover:bg-primary/5"
+                  )}
+                >
+                  <ChevronDown className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 内容区 */}
+        <div className="flex-1 overflow-y-auto lg:overflow-hidden z-10">
+          {/* 桌面端：左右分栏布局 */}
+          <div className="hidden lg:grid lg:grid-cols-10 gap-6 p-6 h-full">
+            {/* 左侧 70% */}
+            <div className="col-span-7 flex flex-col gap-6 h-full overflow-hidden">
+
+            {/* 步骤图区域 */}
             <div className="flex-[8] rounded-2xl border border-border bg-white flex flex-col items-center justify-center overflow-hidden relative shadow-sm">
               <div className="absolute inset-0 opacity-25 pointer-events-none"
                 style={{
@@ -395,7 +490,7 @@ export function CookClient({ recipe }: CookClientProps) {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.98 }}
                   transition={{ duration: 0.2 }}
-                  className="flex flex-col items-center justify-center h-full w-full p-6 z-10"
+                  className="flex flex-col items-center justify-center h-full w-full p-4 lg:p-6 z-10"
                 >
                   {currentStepData.image ? (
                     <img
@@ -417,23 +512,23 @@ export function CookClient({ recipe }: CookClientProps) {
               </AnimatePresence>
             </div>
 
-            {/* 下面 20%：耗时数据盘 */}
-            <div className="flex-[2] grid grid-cols-3 gap-4 shrink-0">
-              <div className="rounded-2xl border border-border bg-white p-4 flex flex-col items-center justify-center shadow-sm">
-                <span className="text-2xl font-black text-foreground tracking-tight font-mono tabular-nums leading-none">{formatTime(elapsedTime)}</span>
-                <span className="mt-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">已用耗时 / Elapsed</span>
+            {/* 下面：耗时数据盘 - 移动端紧凑，桌面端flex-2 */}
+            <div className="grid grid-cols-3 gap-2 lg:gap-4 lg:flex-[2] shrink-0">
+              <div className="rounded-xl lg:rounded-2xl border border-border bg-white p-2 lg:p-4 flex flex-col items-center justify-center shadow-sm">
+                <span className="text-lg lg:text-2xl font-black text-foreground tracking-tight font-mono tabular-nums leading-none">{formatTime(elapsedTime)}</span>
+                <span className="mt-1 lg:mt-2 text-[8px] lg:text-[9px] font-bold uppercase tracking-widest text-muted-foreground text-center">已用耗时</span>
               </div>
-              <div className="rounded-2xl border border-border bg-white p-4 flex flex-col items-center justify-center shadow-sm">
-                <span className="text-2xl font-black text-foreground tracking-tight font-mono tabular-nums leading-none">
+              <div className="rounded-xl lg:rounded-2xl border border-border bg-white p-2 lg:p-4 flex flex-col items-center justify-center shadow-sm">
+                <span className="text-lg lg:text-2xl font-black text-foreground tracking-tight font-mono tabular-nums leading-none">
                   {currentStepData.duration_sec ? formatTime(currentStepData.duration_sec) : "--:--"}
                 </span>
-                <span className="mt-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">本步推荐 / Step Target</span>
+                <span className="mt-1 lg:mt-2 text-[8px] lg:text-[9px] font-bold uppercase tracking-widest text-muted-foreground text-center">本步推荐</span>
               </div>
-              <div className="rounded-2xl border border-border bg-white p-4 flex flex-col items-center justify-center shadow-sm">
-                <span className="text-2xl font-black text-primary tracking-tight font-mono tabular-nums leading-none">
+              <div className="rounded-xl lg:rounded-2xl border border-border bg-white p-2 lg:p-4 flex flex-col items-center justify-center shadow-sm">
+                <span className="text-lg lg:text-2xl font-black text-primary tracking-tight font-mono tabular-nums leading-none">
                   {remainingTime > 0 ? formatTime(remainingTime) : "00:00"}
                 </span>
-                <span className="mt-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">还剩预计 / Remaining</span>
+                <span className="mt-1 lg:mt-2 text-[8px] lg:text-[9px] font-bold uppercase tracking-widest text-muted-foreground text-center">还剩预计</span>
               </div>
             </div>
           </div>
@@ -539,6 +634,171 @@ export function CookClient({ recipe }: CookClientProps) {
               </div>
             )}
           </div>
+          </div>
+
+          {/* 移动端：垂直堆叠布局 */}
+          <div className="lg:hidden flex flex-col pb-24 bg-neutral-50/40">
+            {/* 1. 行动指令卡片 - 仪表盘风格 */}
+            <div className="bg-gradient-to-br from-white via-neutral-50/80 to-white border-b-2 border-border p-4 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-2 w-2 rounded-full bg-primary animate-pulse shadow-lg shadow-primary/50" />
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">ACTION REQUIRED</span>
+              </div>
+              <h2 className="text-xl font-black tracking-tight leading-tight text-foreground">
+                {renderHighlightedInstruction(currentStepData.instruction)}
+              </h2>
+            </div>
+
+            {/* 2. 步骤图 */}
+            <div className="p-4">
+              <div className="h-72 rounded-2xl border-2 border-border bg-white flex items-center justify-center overflow-hidden relative shadow-md">
+                <div className="absolute inset-0 opacity-20 pointer-events-none"
+                  style={{
+                    backgroundImage: "radial-gradient(circle, #e0e0e0 1.2px, transparent 1.2px)",
+                    backgroundSize: "20px 20px",
+                  }}
+                />
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentStep}
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex items-center justify-center h-full w-full p-6 z-10"
+                  >
+                    {currentStepData.image ? (
+                      <img
+                        src={currentStepData.image}
+                        alt={currentStepData.title}
+                        className="h-full w-full object-cover rounded-xl"
+                      />
+                    ) : (
+                      <div className="text-center">
+                        <ChefHat className="mx-auto h-20 w-20 text-primary/20 mb-3" />
+                        <p className="text-sm font-bold text-muted-foreground">步骤 {currentStep + 1}</p>
+                      </div>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </div>
+
+            {/* 3. 计时器数据 - 仪表盘风格 */}
+            <div className="px-4 pb-4">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-2xl border-2 border-border bg-white p-4 flex flex-col items-center justify-center shadow-md">
+                  <span className="text-2xl font-black text-foreground tracking-tight font-mono tabular-nums leading-none">{formatTime(elapsedTime)}</span>
+                  <span className="mt-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">已用耗时</span>
+                </div>
+                <div className="rounded-2xl border-2 border-border bg-white p-4 flex flex-col items-center justify-center shadow-md">
+                  <span className="text-2xl font-black text-foreground tracking-tight font-mono tabular-nums leading-none">
+                    {currentStepData.duration_sec ? formatTime(currentStepData.duration_sec) : "--:--"}
+                  </span>
+                  <span className="mt-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">本步推荐</span>
+                </div>
+                <div className="rounded-2xl border-2 border-border bg-white p-4 flex flex-col items-center justify-center shadow-md">
+                  <span className="text-2xl font-black text-primary tracking-tight font-mono tabular-nums leading-none">
+                    {remainingTime > 0 ? formatTime(remainingTime) : "00:00"}
+                  </span>
+                  <span className="mt-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">还剩预计</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 4. 注意事项 - 仪表盘风格 */}
+            <div className="px-4 pb-4">
+              <div className="rounded-2xl border-2 border-border bg-white p-5 shadow-md">
+                <div className="mb-4 flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                    📋 注意事项 / Cautions
+                  </span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentStep}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-4"
+                  >
+                    {/* 步骤核心指令 */}
+                    <div className="p-4 rounded-xl bg-neutral-50 border border-border/60">
+                      <p className="text-xs font-semibold leading-relaxed text-foreground/90">
+                        {currentStepData.instruction}
+                      </p>
+                    </div>
+
+                    {/* 小贴士清单 */}
+                    {currentStepData.tips && currentStepData.tips.length > 0 && (
+                      <div className="space-y-2 pt-3 border-t border-border/50">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-2">
+                          💡 步骤提示 / Tips
+                        </span>
+                        {currentStepData.tips.map((tip, i) => (
+                          <div key={i} className="flex gap-2 text-xs leading-relaxed text-muted-foreground font-medium">
+                            <span className="text-primary shrink-0 font-bold">•</span>
+                            <span>{tip}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
+
+          {/* 移动端：底部吸附倒计时控制器 */}
+          {currentStepData.duration_sec && (
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t-2 border-border p-4 z-20 shadow-2xl">
+              <div className="flex flex-col gap-3">
+                {/* 标题行 */}
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                    ⏱ 步骤计时 / Step Clock
+                  </span>
+                  <Clock className={cn("h-4 w-4", isStepTimerRunning ? "text-primary animate-pulse" : "text-muted-foreground")} />
+                </div>
+
+                {/* 时间和按钮 */}
+                <div className="flex items-center justify-between gap-4">
+                  {/* 大字号时间显示 */}
+                  <span className="text-4xl font-black text-foreground font-mono tabular-nums leading-none tracking-tight">
+                    {formatTime(stepTimeElapsed)}
+                  </span>
+
+                  {/* 控制按钮 */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setIsStepTimerRunning(!isStepTimerRunning)}
+                      className={cn(
+                        "flex h-11 px-5 items-center justify-center gap-1.5 rounded-xl text-xs font-bold text-white transition-all active:scale-95 shadow-md shadow-primary/10",
+                        isStepTimerRunning
+                          ? "bg-neutral-800 hover:bg-neutral-900"
+                          : "bg-primary hover:bg-primary/95"
+                      )}
+                    >
+                      {isStepTimerRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                      <span>{isStepTimerRunning ? "暂停" : "开始"}</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsStepTimerRunning(false);
+                        setStepTimeElapsed(0);
+                      }}
+                      className="flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-white text-muted-foreground hover:bg-neutral-50 active:scale-95 shadow-sm"
+                      title="重置"
+                    >
+                      <RotateCcw className="h-4.5 w-4.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>

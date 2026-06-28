@@ -70,6 +70,14 @@ export const recipeAPI = {
     const response = await fetchAPI<{ data: RecipeSummary[] }>(`/recipes/category/${category}`);
     return response.data;
   },
+
+  /**
+   * 随机获取菜谱
+   */
+  getRandomRecipes: async (limit: number = 24): Promise<RecipeSummary[]> => {
+    const response = await fetchAPI<{ data: RecipeSummary[] }>(`/recipes/random?limit=${limit}`);
+    return response.data;
+  },
 };
 
 export default recipeAPI;

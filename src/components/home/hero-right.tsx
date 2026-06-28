@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { useRecipeStore } from "@/store/recipe-store";
+import recipeAPI from "@/services/recipe-api";
 
 const COPY_LINES = [
   { from: "「看完就忘」",   to: "「一步做出来」" },
@@ -39,15 +39,28 @@ function AnimatedCopy({ interval = 2800 }: { interval?: number }) {
 }
 
 export function HeroRight({ interval = 2800 }: { interval?: number }) {
-  const { recipeList } = useRecipeStore();
+  const [totalRecipes, setTotalRecipes] = useState(0);
+  const [avgSteps, setAvgSteps] = useState(5);
 
-  // 计算真实数据
-  const totalRecipes = recipeList.length;
+  // 获取统计数据
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/recipes/stats`);
+        const data = await response.json();
 
-  // 计算平均步数
-  const avgSteps = recipeList.length > 0
-    ? Math.round(recipeList.reduce((sum, r) => sum + (r.steps_count || 5), 0) / recipeList.length)
-    : 5;
+        if (data.total) {
+          setTotalRecipes(data.total);
+        }
+        if (data.avg_steps) {
+          setAvgSteps(data.avg_steps);
+        }
+      } catch (error) {
+        console.error('Failed to load stats:', error);
+      }
+    };
+    loadStats();
+  }, []);
 
   return (
     <motion.div

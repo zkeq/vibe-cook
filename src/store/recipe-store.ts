@@ -2,34 +2,26 @@ import { create } from 'zustand';
 import type { Recipe, RecipeSummary } from '@/lib/types';
 import { recipeAPI } from '@/services/recipe-api';
 
+const LIMIT_PER_PAGE = 24;
+
 interface RecipeState {
-  // 菜谱列表
   recipeList: RecipeSummary[];
-  setRecipeList: (list: RecipeSummary[]) => void;
-
-  // 当前查看的菜谱详情
   currentRecipe: Recipe | null;
-  setCurrentRecipe: (recipe: Recipe | null) => void;
-
-  // 加载状态
   isLoading: boolean;
-  setIsLoading: (loading: boolean) => void;
-
-  // 错误信息
   error: string | null;
+  currentPage: number;
+  totalPages: number;
+  totalRecipes: number;
+
+  setRecipeList: (list: RecipeSummary[]) => void;
+  setCurrentRecipe: (recipe: Recipe | null) => void;
+  setIsLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  setCurrentPage: (page: number) => void;
 
-  // 根据 ID 获取菜谱
   fetchRecipeById: (id: string) => Promise<void>;
-
-  // 获取菜谱列表
-  fetchRecipeList: () => Promise<void>;
-
-  // 搜索菜谱
+  fetchRecipeList: (page?: number) => Promise<void>;
   searchRecipes: (query: string) => Promise<void>;
-
-  // 根据分类获取菜谱
-  fetchRecipesByCategory: (category: string) => Promise<void>;
 }
 
 export const useRecipeStore = create<RecipeState>((set, get) => ({
@@ -37,11 +29,18 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
   currentRecipe: null,
   isLoading: false,
   error: null,
+  currentPage: 1,
+  totalPages: 1,
+  totalRecipes: 0,
 
   setRecipeList: (list) => set({ recipeList: list }),
   setCurrentRecipe: (recipe) => set({ currentRecipe: recipe }),
   setIsLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error }),
+  setCurrentPage: (page) => {
+    set({ currentPage: page });
+    get().fetchRecipeList(page);
+  },
 
   fetchRecipeById: async (id: string) => {
     set({ isLoading: true, error: null });
@@ -50,18 +49,27 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
       set({ currentRecipe: recipe, isLoading: false });
     } catch (error) {
       set({
-        error: error instanceof Error ? error.message : '获取菜谱失败',
+        error: error instanceof Error ? error.message : '获取菜谱详情失败',
         isLoading: false
       });
     }
   },
 
-  fetchRecipeList: async () => {
+  fetchRecipeList: async (page = 1) => {
     set({ isLoading: true, error: null });
     try {
-      // 获取所有菜谱（设置一个较大的 limit）
-      const list = await recipeAPI.getRecipes({ limit: 200 });
-      set({ recipeList: list, isLoading: false });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/recipes?page=${page}&limit=${LIMIT_PER_PAGE}`
+      );
+      const data = await response.json();
+      
+      set({
+        recipeList: data.data || [],
+        currentPage: data.page || page,
+        totalRecipes: data.total || 0,
+        totalPages: Math.ceil((data.total || 0) / LIMIT_PER_PAGE),
+        isLoading: false
+      });
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : '获取菜谱列表失败',
@@ -78,19 +86,6 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : '搜索失败',
-        isLoading: false
-      });
-    }
-  },
-
-  fetchRecipesByCategory: async (category: string) => {
-    set({ isLoading: true, error: null });
-    try {
-      const list = await recipeAPI.getRecipesByCategory(category);
-      set({ recipeList: list, isLoading: false });
-    } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : '获取分类菜谱失败',
         isLoading: false
       });
     }

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ChefHat } from "lucide-react";
 import { useIntro } from "@/lib/intro-context";
 import { useRecipeStore } from "@/store/recipe-store";
+import recipeAPI from "@/services/recipe-api";
 import type { RecipeSummary } from "@/lib/types";
 import { CATEGORY_GRAD } from "./recipe-card";
 import { HeroLeft } from "./hero-left";
@@ -133,18 +134,24 @@ function WaterfallPhase({ items, totalCount }: { items: RecipeSummary[]; totalCo
 /* ── 主 Overlay ── */
 export function IntroOverlay() {
   const { phase, advance, skip } = useIntro();
-  const { recipeList, fetchRecipeList } = useRecipeStore();
+  const { recipeList } = useRecipeStore();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [displayRecipes, setDisplayRecipes] = useState<RecipeSummary[]>([]);
 
-  // 只使用前 20 个菜谱用于首屏动画
-  const displayRecipes = recipeList.slice(0, 20);
-
-  // 加载菜谱列表
+  // 加载随机菜谱用于首屏动画
   useEffect(() => {
-    if (recipeList.length === 0) {
-      fetchRecipeList();
-    }
-  }, [recipeList.length, fetchRecipeList]);
+    const loadRandomRecipes = async () => {
+      try {
+        const random = await recipeAPI.getRandomRecipes(20);
+        setDisplayRecipes(random);
+      } catch (error) {
+        console.error('Failed to load random recipes:', error);
+        // 降级使用前 20 个
+        setDisplayRecipes(recipeList.slice(0, 20));
+      }
+    };
+    loadRandomRecipes();
+  }, [recipeList]);
 
   useEffect(() => {
     if (phase === "hero") {

@@ -59,7 +59,8 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
   fetchRecipeList: async () => {
     set({ isLoading: true, error: null });
     try {
-      const list = await recipeAPI.getRecipes();
+      // 获取所有菜谱（设置一个较大的 limit）
+      const list = await recipeAPI.getRecipes({ limit: 200 });
       set({ recipeList: list, isLoading: false });
     } catch (error) {
       set({

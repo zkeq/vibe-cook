@@ -68,4 +68,5 @@ export interface RecipeSummary {
   calories?: number;
   duration_min?: number;
   tags?: string[];
+  steps_count?: number;
 }

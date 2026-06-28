@@ -11,10 +11,9 @@ export default function CookPage() {
   const { currentRecipe, fetchRecipeById, isLoading } = useRecipeStore();
 
   useEffect(() => {
-    if (!currentRecipe || currentRecipe.id !== id) {
-      fetchRecipeById(id);
-    }
-  }, [id, currentRecipe, fetchRecipeById]);
+    fetchRecipeById(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   if (isLoading || !currentRecipe) {
     return (

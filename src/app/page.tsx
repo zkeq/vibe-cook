@@ -17,12 +17,11 @@ export default function HomePage() {
   const { recipeList, fetchRecipeList, isLoading } = useRecipeStore();
   const entered = phase === "app" || phase === "done";
 
-  // 页面加载时获取菜谱列表
+  // 页面加载时获取菜谱列表（只执行一次）
   useEffect(() => {
-    if (recipeList.length === 0) {
-      fetchRecipeList();
-    }
-  }, [fetchRecipeList, recipeList.length]);
+    fetchRecipeList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fadeUp = (delay: number) =>
     entered

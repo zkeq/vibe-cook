@@ -11,11 +11,10 @@ export default function RecipeDetailPage() {
   const { currentRecipe, fetchRecipeById, isLoading, error } = useRecipeStore();
 
   useEffect(() => {
-    // 如果当前没有菜谱或 ID 不匹配，重新获取
-    if (!currentRecipe || currentRecipe.id !== id) {
-      fetchRecipeById(id);
-    }
-  }, [id, currentRecipe, fetchRecipeById]);
+    // 只在 ID 变化时获取数据
+    fetchRecipeById(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   if (isLoading) {
     return (

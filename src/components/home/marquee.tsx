@@ -14,14 +14,23 @@ const styleTag = `
 `;
 
 export function Marquee({ items, reverse = false }: Props) {
-  const track = [...items, ...items, ...items, ...items];
+  // 只复制2倍，减少渲染元素
+  const track = [...items, ...items];
+
+  // 速度 30px/s，每个卡片约 200px
+  // 时间 = (卡片数 * 200) / 30 = 卡片数 * 6.67
+  const duration = Math.max(80, items.length * 6.67);
+
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: styleTag }} />
       <div className="overflow-hidden">
         <div
           className="flex w-max gap-3"
-          style={{ animation: `${reverse ? "marquee-bwd" : "marquee-fwd"} 80s linear infinite` }}
+          style={{
+            animation: `${reverse ? "marquee-bwd" : "marquee-fwd"} ${duration}s linear infinite`,
+            willChange: 'transform'
+          }}
         >
           {track.map((r, i) => (
             <RecipeCard key={`${r.id}-${i}`} recipe={r} />

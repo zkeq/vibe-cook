@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { useRecipeStore } from "@/store/recipe-store";
 
 const COPY_LINES = [
   { from: "「看完就忘」",   to: "「一步做出来」" },
@@ -38,6 +39,16 @@ function AnimatedCopy({ interval = 2800 }: { interval?: number }) {
 }
 
 export function HeroRight({ interval = 2800 }: { interval?: number }) {
+  const { recipeList } = useRecipeStore();
+
+  // 计算真实数据
+  const totalRecipes = recipeList.length;
+
+  // 计算平均步数
+  const avgSteps = recipeList.length > 0
+    ? Math.round(recipeList.reduce((sum, r) => sum + (r.steps_count || 5), 0) / recipeList.length)
+    : 5;
+
   return (
     <motion.div
       initial="hidden"
@@ -60,13 +71,13 @@ export function HeroRight({ interval = 2800 }: { interval?: number }) {
         className="flex items-center gap-5 pb-4"
       >
         <div>
-          <span className="text-5xl font-black text-foreground">50</span>
+          <span className="text-5xl font-black text-foreground">{totalRecipes || 50}</span>
           <span className="ml-0.5 text-2xl font-black text-primary">+</span>
           <p className="text-xs text-muted-foreground">精选食谱</p>
         </div>
         <div className="h-8 w-px bg-border" />
         <div>
-          <span className="text-5xl font-black text-foreground">5</span>
+          <span className="text-5xl font-black text-foreground">{avgSteps}</span>
           <p className="text-xs text-muted-foreground">平均步数</p>
         </div>
         <div className="h-8 w-px bg-border" />

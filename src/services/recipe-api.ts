@@ -1,7 +1,7 @@
 import type { Recipe, RecipeSummary } from '@/lib/types';
 
 // API 基础配置
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 // 通用请求函数
 async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
@@ -35,51 +35,40 @@ export const recipeAPI = {
     page?: number;
     limit?: number;
   }): Promise<RecipeSummary[]> => {
-    // TODO: 对接后端 API
-    // const query = new URLSearchParams(params as any).toString();
-    // return fetchAPI<RecipeSummary[]>(`/api/recipes?${query}`);
+    const query = new URLSearchParams();
+    if (params?.category) query.append('category', params.category);
+    if (params?.search) query.append('search', params.search);
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.limit) query.append('limit', params.limit.toString());
 
-    // 暂时返回 mock 数据
-    const { mockRecipeList } = await import('@/lib/mock');
-    return mockRecipeList;
+    const queryString = query.toString();
+    const endpoint = `/recipes${queryString ? `?${queryString}` : ''}`;
+
+    const response = await fetchAPI<{ data: RecipeSummary[] }>(endpoint);
+    return response.data;
   },
 
   /**
    * 根据 ID 获取菜谱详情
    */
   getRecipeById: async (id: string): Promise<Recipe> => {
-    // TODO: 对接后端 API
-    // return fetchAPI<Recipe>(`/api/recipes/${id}`);
-
-    // 暂时返回 mock 数据
-    const { mockRecipe } = await import('@/lib/mock');
-    return mockRecipe;
+    return fetchAPI<Recipe>(`/recipes/${id}`);
   },
 
   /**
    * 搜索菜谱
    */
   searchRecipes: async (query: string): Promise<RecipeSummary[]> => {
-    // TODO: 对接后端 API
-    // return fetchAPI<RecipeSummary[]>(`/api/recipes/search?q=${encodeURIComponent(query)}`);
-
-    const { mockRecipeList } = await import('@/lib/mock');
-    return mockRecipeList.filter(
-      (recipe) =>
-        recipe.title.toLowerCase().includes(query.toLowerCase()) ||
-        recipe.summary?.toLowerCase().includes(query.toLowerCase())
-    );
+    const response = await fetchAPI<{ data: RecipeSummary[] }>(`/recipes/search?q=${encodeURIComponent(query)}`);
+    return response.data;
   },
 
   /**
    * 根据分类获取菜谱
    */
   getRecipesByCategory: async (category: string): Promise<RecipeSummary[]> => {
-    // TODO: 对接后端 API
-    // return fetchAPI<RecipeSummary[]>(`/api/recipes/category/${category}`);
-
-    const { mockRecipeList } = await import('@/lib/mock');
-    return mockRecipeList.filter((recipe) => recipe.category === category);
+    const response = await fetchAPI<{ data: RecipeSummary[] }>(`/recipes/category/${category}`);
+    return response.data;
   },
 };
 

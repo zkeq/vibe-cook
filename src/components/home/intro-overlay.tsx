@@ -38,13 +38,15 @@ function MarqueeRow({
   speed: number;
   reverse?: boolean;
 }) {
-  const track = [...items, ...items, ...items, ...items];
+  // 只复制2倍，减少渲染压力
+  const track = [...items, ...items];
   return (
     <div>
       <div
         className="flex w-max gap-4"
         style={{
           animation: `${reverse ? "mq-bwd" : "mq-fwd"} ${speed}s linear infinite`,
+          willChange: 'transform'
         }}
       >
         {track.map((r, i) => {
@@ -72,7 +74,18 @@ function MarqueeRow({
 }
 
 /* ── 第二屏：深色背景 + 多行不同速度的 marquee ── */
-function WaterfallPhase({ items }: { items: RecipeSummary[] }) {
+function WaterfallPhase({ items, totalCount }: { items: RecipeSummary[]; totalCount: number }) {
+  // 速度 50px/s，每个卡片约 220px (含间隔)
+  // 时间 = (卡片数 * 220) / 50 = 卡片数 * 4.4
+  const baseSpeed = Math.max(40, items.length * 4.4);
+  const speeds = [
+    baseSpeed * 1.4,  // 最慢 ~36px/s
+    baseSpeed * 1.1,  // ~45px/s
+    baseSpeed,        // 50px/s
+    baseSpeed * 0.85, // ~59px/s
+    baseSpeed * 0.7,  // ~71px/s
+  ];
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -81,7 +94,7 @@ function WaterfallPhase({ items }: { items: RecipeSummary[] }) {
       transition={{ duration: 0.45 }}
       className="relative flex h-screen w-full flex-col justify-center gap-4"
     >
-      {ROW_SPEEDS.map((speed, i) => (
+      {speeds.map((speed, i) => (
         <MarqueeRow
           key={i}
           items={i % 2 === 0 ? items : [...items].reverse()}
@@ -96,7 +109,7 @@ function WaterfallPhase({ items }: { items: RecipeSummary[] }) {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-16" style={{ background: "linear-gradient(to bottom, #ffffff, transparent)" }} />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16" style={{ background: "linear-gradient(to top, #ffffff, transparent)" }} />
 
-      {/* 中心数字 */}
+      {/* 中心数字 - 显示真实的总数 */}
       <motion.div
         initial={{ opacity: 0, scale: 0.85 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -107,7 +120,7 @@ function WaterfallPhase({ items }: { items: RecipeSummary[] }) {
           className="rounded-2xl px-8 py-5 text-center"
           style={{ background: "rgba(255,255,255,0.75)", backdropFilter: "blur(12px)", border: "1px solid #e5e5e5" }}
         >
-          <span className="block text-5xl font-black" style={{ color: "#1a1a1a" }}>{items.length}+</span>
+          <span className="block text-5xl font-black" style={{ color: "#1a1a1a" }}>{totalCount}+</span>
           <span className="mt-1 block text-sm font-semibold tracking-widest" style={{ color: "#737373" }}>
             道精选食谱
           </span>
@@ -122,6 +135,9 @@ export function IntroOverlay() {
   const { phase, advance, skip } = useIntro();
   const { recipeList, fetchRecipeList } = useRecipeStore();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 只使用前 20 个菜谱用于首屏动画
+  const displayRecipes = recipeList.slice(0, 20);
 
   // 加载菜谱列表
   useEffect(() => {
@@ -229,7 +245,7 @@ export function IntroOverlay() {
                   transition={{ duration: 0.4 }}
                   className="absolute inset-0"
                 >
-                  <WaterfallPhase items={recipeList} />
+                  <WaterfallPhase items={displayRecipes} totalCount={recipeList.length} />
                 </motion.div>
               )}
             </AnimatePresence>

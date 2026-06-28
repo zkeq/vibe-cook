@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Star, Minus, Plus, Play, ChefHat } from "lucide-react";
+import { Star, Minus, Plus, Play, ChefHat, Check } from "lucide-react";
 import Link from "next/link";
 import type { Recipe } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -16,7 +16,48 @@ interface RecipeHeaderProps {
 export function RecipeHeader({ recipe }: RecipeHeaderProps) {
   const [servings, setServings] = useState(recipe.servings.base);
   const [activeTab, setActiveTab] = useState<"cover" | "guide">("cover");
+  const [checkedIngredients, setCheckedIngredients] = useState<Set<string>>(new Set());
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // 从 localStorage 加载份数
+  useEffect(() => {
+    const saved = localStorage.getItem(`recipe-servings-${recipe.id}`);
+    if (saved) {
+      setServings(parseInt(saved, 10));
+    }
+  }, [recipe.id]);
+
+  // 保存份数到 localStorage
+  useEffect(() => {
+    localStorage.setItem(`recipe-servings-${recipe.id}`, servings.toString());
+  }, [servings, recipe.id]);
+
+  // 从 localStorage 加载勾选状态
+  useEffect(() => {
+    const saved = localStorage.getItem(`shopping-list-${recipe.id}`);
+    if (saved) {
+      setCheckedIngredients(new Set(JSON.parse(saved)));
+    }
+  }, [recipe.id]);
+
+  // 监听 storage 事件，同步采购清单的勾选状态
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const saved = localStorage.getItem(`shopping-list-${recipe.id}`);
+      if (saved) {
+        setCheckedIngredients(new Set(JSON.parse(saved)));
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    // 也监听自定义事件，用于同一页面内的更新
+    window.addEventListener("shopping-list-updated", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("shopping-list-updated", handleStorageChange);
+    };
+  }, [recipe.id]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -195,38 +236,71 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
         <div className="mb-2 flex items-center gap-2">
           <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">采购清单</span>
           <div className="h-px flex-1 border-t border-dashed border-border" />
+          <Link
+            href={`/recipe/${recipe.id}/shopping`}
+            className="text-[10px] font-bold text-primary border-b border-dashed border-primary/50 hover:border-primary transition-colors"
+          >
+            采购模式
+          </Link>
         </div>
 
         {/* 食材列表 - 紧凑布局 */}
         <div className="mb-3 grid grid-cols-2 gap-x-6 gap-y-1.5">
-          {scaledIngredients.map((ing, i) => (
-            <div key={i} className="flex items-baseline justify-between text-xs">
-              <span className={cn("font-medium", ing.optional && "text-muted-foreground")}>
-                {ing.name}
-              </span>
-              <div className="flex items-baseline gap-1 tabular-nums">
-                {ing.per_serving ? (
-                  <>
-                    <AnimatePresence mode="wait">
-                      <motion.span
-                        key={`${i}-${servings}`}
-                        initial={{ y: -8, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: 8, opacity: 0 }}
-                        transition={{ duration: 0.15 }}
-                        className="text-sm font-bold text-primary"
-                      >
-                        {ing.scaledValue}
-                      </motion.span>
-                    </AnimatePresence>
-                    <span className="text-muted-foreground">{ing.unit}</span>
-                  </>
-                ) : (
-                  <span className="text-muted-foreground">{ing.amount}</span>
-                )}
+          {scaledIngredients.map((ing, i) => {
+            const ingredientKey = `${ing.name}-${ing.amount}`;
+            const isChecked = checkedIngredients.has(ingredientKey);
+
+            return (
+              <div key={i} className="flex items-baseline justify-between text-xs gap-2">
+                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                  {/* 勾选框 */}
+                  <div
+                    className={cn(
+                      "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-sm border transition-all",
+                      isChecked
+                        ? "border-primary bg-primary"
+                        : "border-border bg-white"
+                    )}
+                  >
+                    {isChecked && <Check className="h-2.5 w-2.5 text-white stroke-[3]" />}
+                  </div>
+
+                  <span className={cn(
+                    "font-medium truncate",
+                    ing.optional && "text-muted-foreground",
+                    isChecked && "line-through text-muted-foreground"
+                  )}>
+                    {ing.name}
+                  </span>
+                </div>
+
+                <div className="flex items-baseline gap-1 tabular-nums shrink-0">
+                  {ing.per_serving ? (
+                    <>
+                      <AnimatePresence mode="wait">
+                        <motion.span
+                          key={`${i}-${servings}`}
+                          initial={{ y: -8, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          exit={{ y: 8, opacity: 0 }}
+                          transition={{ duration: 0.15 }}
+                          className={cn(
+                            "text-sm font-bold",
+                            isChecked ? "text-muted-foreground" : "text-primary"
+                          )}
+                        >
+                          {ing.scaledValue}
+                        </motion.span>
+                      </AnimatePresence>
+                      <span className="text-muted-foreground">{ing.unit}</span>
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground">{ing.amount}</span>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* 选用工具标题 */}

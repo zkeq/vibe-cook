@@ -12,12 +12,12 @@ export const mockRecipe: Recipe = {
   overview_image: "/recipes/overview-guide.jpg",
   tags: ["快手", "下饭", "新手友好"],
   ingredients: [
-    { name: "西红柿", amount: "1个(约180g)", per_serving: true },
-    { name: "鸡蛋", amount: "1.5个", per_serving: true },
-    { name: "食用油", amount: "4ml/个鸡蛋", per_serving: true },
-    { name: "盐", amount: "1.5-2g", per_serving: true },
-    { name: "糖", amount: "0-2g", per_serving: true, optional: true },
-    { name: "葱花", amount: "0-10g", per_serving: true, optional: true },
+    { name: "西红柿", amount: "1个(约180g)", per_serving: true, buying_tip: "选择成熟度适中、表皮光滑无裂纹的，颜色鲜红均匀" },
+    { name: "鸡蛋", amount: "1.5个", per_serving: true, buying_tip: "选择新鲜鸡蛋，购买时轻轻晃动听是否有晃动声，检查蛋壳是否完整无裂纹" },
+    { name: "食用油", amount: "4ml/个鸡蛋", per_serving: true, buying_tip: "推荐使用花生油或玉米油，色泽清亮无杂质" },
+    { name: "盐", amount: "1.5-2g", per_serving: true, buying_tip: "普通食用盐即可，也可使用海盐增加风味" },
+    { name: "糖", amount: "0-2g", per_serving: true, optional: true, buying_tip: "白砂糖即可，用于中和西红柿的酸味" },
+    { name: "葱花", amount: "0-10g", per_serving: true, optional: true, buying_tip: "选择叶片翠绿、根部洁白的新鲜小葱" },
   ],
   tools: ["炒锅", "锅铲", "碗"],
   servings: {

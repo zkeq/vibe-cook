@@ -15,20 +15,22 @@ export default function RecipeLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const isCookPage = pathname ? pathname.endsWith("/cook") : false;
+  const isShoppingPage = pathname ? pathname.endsWith("/shopping") : false;
+  const isFullscreenPage = isCookPage || isShoppingPage;
 
   return (
     <>
       {/* 顶部导航栏 - 传入菜单控制 */}
-      {!isCookPage && (
+      {!isFullscreenPage && (
         <Navbar
           showMenuButton={true}
           onMenuClick={() => setMobileMenuOpen(true)}
         />
       )}
 
-      <div className={`-mt-14 min-h-screen ${isCookPage ? "" : "flex pt-14"}`}>
+      <div className={isFullscreenPage ? "" : "-mt-14 min-h-screen flex pt-14"}>
         {/* 左侧导航 - 在 layout 层级，不会因为页面切换而重新挂载 */}
-        {!isCookPage && (
+        {!isFullscreenPage && (
           <RecipeSidebar
             recipes={mockRecipeList}
             collapsed={sidebarCollapsed}

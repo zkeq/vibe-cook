@@ -11,6 +11,7 @@ export interface Ingredient {
   amount: string; // 如 "1个(约180g)"
   per_serving?: boolean; // 是否随份数缩放
   optional?: boolean;
+  buying_tip?: string; // 购买注意事项，如"选择成熟度适中的"
 }
 
 /** 份量计算 */

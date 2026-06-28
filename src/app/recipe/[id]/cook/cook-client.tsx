@@ -440,7 +440,7 @@ export function CookClient({ recipe }: CookClientProps) {
                 {/* 下面：耗时数据盘 */}
                 <div className="grid grid-cols-3 gap-2 lg:gap-4 lg:flex-[2] shrink-0">
                   <div className="rounded-xl lg:rounded-2xl border border-border bg-white p-2 lg:p-4 flex flex-col items-center justify-center shadow-sm">
-                    <span className="text-lg lg:text-2xl font-black text-foreground tracking-tight font-mono tabular-nums leading-none">{formatTime(elapsedTime)}</span>
+                    <span className="text-3xl lg:text-2xl font-black text-foreground tracking-tight font-mono tabular-nums leading-none">{formatTime(elapsedTime)}</span>
                     <span className="mt-1 lg:mt-2 text-[8px] lg:text-[9px] font-bold uppercase tracking-widest text-muted-foreground text-center">已用耗时</span>
                   </div>
                   <div className="rounded-xl lg:rounded-2xl border border-border bg-white p-2 lg:p-4 flex flex-col items-center justify-center shadow-sm">
@@ -763,7 +763,7 @@ export function CookClient({ recipe }: CookClientProps) {
                   <div className="flex flex-col">
                     <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">本步耗时</span>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-lg font-black text-foreground font-mono tabular-nums leading-none">
+                      <span className="text-3xl font-black text-foreground font-mono tabular-nums leading-none">
                         {formatTime(stepTimeElapsed)}
                       </span>
                       {currentStepData.duration_sec && (
@@ -793,14 +793,14 @@ export function CookClient({ recipe }: CookClientProps) {
                 <div className="flex items-center gap-4 text-right">
                   <div className="flex flex-col">
                     <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">累计用时</span>
-                    <span className="text-sm font-bold text-foreground font-mono tabular-nums leading-none">
+                    <span className="text-lg font-bold text-foreground font-mono tabular-nums leading-none">
                       {formatTime(elapsedTime)}
                     </span>
                   </div>
                   {remainingTime > 0 && (
                     <div className="flex flex-col border-l border-neutral-200 pl-3">
                       <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">预计还剩</span>
-                      <span className="text-sm font-bold text-primary font-mono tabular-nums leading-none">
+                      <span className="text-lg font-bold text-primary font-mono tabular-nums leading-none">
                         {formatTime(remainingTime)}
                       </span>
                     </div>

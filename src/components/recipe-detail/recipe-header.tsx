@@ -54,10 +54,10 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
   });
 
   return (
-    <div ref={containerRef} className="mb-6 rounded-xl bg-white p-4 shadow-sm">
-      <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+    <div ref={containerRef} className="mb-6 rounded-xl bg-white p-3 sm:p-4 shadow-sm">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[320px_1fr]">
         {/* 左侧：成品图 / 全解图 */}
-        <div className="relative overflow-hidden rounded-lg bg-neutral-50 border border-border self-start lg:self-stretch">
+        <div className="relative overflow-hidden rounded-lg bg-neutral-50 border border-border h-64 sm:h-80 lg:h-auto lg:self-stretch">
           {/* 包裹层 - 使用绝对定位确保不撑高 */}
           <div className="relative w-full h-full flex flex-col">
             {/* 图片展示区 */}
@@ -139,7 +139,7 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
         <div className="flex flex-col">
         {/* 标题和简介 */}
         <div className="mb-3">
-          <h1 className="mb-1 text-xl font-bold">{recipe.title}</h1>
+          <h1 className="mb-1 text-lg sm:text-xl font-bold">{recipe.title}</h1>
           <p className="text-xs leading-relaxed text-muted-foreground">{recipe.summary}</p>
         </div>
 
@@ -149,34 +149,34 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
           <div className="h-px flex-1 border-t border-dashed border-border" />
         </div>
 
-        {/* 基本信息 - grid 4列 */}
+        {/* 基本信息 - grid 2列移动端，4列桌面端 */}
         <div className="mb-3 grid grid-cols-2 gap-3 py-3 md:grid-cols-4">
           {/* 时间 */}
           <div>
-            <span className="flex items-baseline gap-1 text-xl font-black text-foreground">
+            <span className="flex items-baseline gap-1 text-lg sm:text-xl font-black text-foreground">
               {recipe.duration_min}
               <span className="text-xs font-black text-primary">MIN</span>
             </span>
-            <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">准备时长 / Time</p>
+            <p className="mt-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-muted-foreground">准备时长 / Time</p>
           </div>
 
           {/* 卡路里 */}
           <div>
-            <span className="flex items-baseline gap-1 text-xl font-black text-foreground">
+            <span className="flex items-baseline gap-1 text-lg sm:text-xl font-black text-foreground">
               {recipe.calories}
               <span className="text-xs font-black text-primary">KCAL</span>
             </span>
-            <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">热量能耗 / Calories</p>
+            <p className="mt-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-muted-foreground">热量能耗 / Calories</p>
           </div>
 
           {/* 难度星星 */}
           <div>
             <div className="flex h-7 items-center gap-1">
               {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} className={cn("h-3.5 w-3.5", i < recipe.difficulty ? "fill-primary text-primary" : "fill-neutral-200 text-neutral-200")} />
+                <Star key={i} className={cn("h-3 sm:h-3.5 w-3 sm:w-3.5", i < recipe.difficulty ? "fill-primary text-primary" : "fill-neutral-200 text-neutral-200")} />
               ))}
             </div>
-            <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            <p className="mt-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
               {recipe.difficulty === 1 ? "简单 / Easy" : recipe.difficulty === 2 ? "一般 / Medium" : "复杂 / Hard"}
             </p>
           </div>
@@ -235,57 +235,60 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
           <div className="h-px flex-1 border-t border-dashed border-border" />
         </div>
 
-        {/* 底部：工具 + 份数 + 按钮 - 横排 */}
-        <div className="mt-auto flex items-center justify-between pt-3">
-          {/* 工具 */}
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            {recipe.tools.map((tool, i) => (
-              <span key={i} className="flex items-center gap-1">
-                {tool}
-              </span>
-            ))}
-          </div>
-
-          {/* 份数选择器 */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">份数</span>
-            <button
-              onClick={() => setServings(Math.max(1, servings - 1))}
-              className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-white shadow-sm transition-all hover:border-primary hover:shadow"
-            >
-              <Minus className="h-3.5 w-3.5" />
-            </button>
-            <div className="relative h-10 w-12 overflow-hidden rounded-lg border-2 border-primary/20 bg-primary/5">
-              <AnimatePresence mode="popLayout">
-                <motion.div
-                  key={servings}
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: -20, opacity: 0 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                  className="absolute inset-0 flex items-center justify-center text-2xl font-bold tabular-nums text-primary"
-                >
-                  {servings}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-            <button
-              onClick={() => setServings(servings + 1)}
-              className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-white shadow-sm transition-all hover:border-primary hover:shadow"
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </button>
-          </div>
-
-          {/* 开始烹饪按钮 */}
-          <Link
-            href={`/recipe/${recipe.id}/cook`}
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary/90 hover:shadow"
-          >
-            <Play className="h-4 w-4" />
-            准备完毕，开始烹饪
-          </Link>
+        {/* 工具列表 */}
+        <div className="mb-3 flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+          {recipe.tools.map((tool, i) => (
+            <span key={i} className="flex items-center gap-1">
+              {tool}
+            </span>
+          ))}
         </div>
+
+        {/* 份数选择器标题 */}
+        <div className="mb-2 flex items-center gap-2">
+          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">份数调整</span>
+          <div className="h-px flex-1 border-t border-dashed border-border" />
+        </div>
+
+        {/* 份数选择器 */}
+        <div className="mb-3 flex items-center justify-center gap-2">
+          <button
+            onClick={() => setServings(Math.max(1, servings - 1))}
+            className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-white shadow-sm transition-all hover:border-primary hover:shadow active:scale-95"
+          >
+            <Minus className="h-3.5 w-3.5" />
+          </button>
+          <div className="relative h-10 w-12 overflow-hidden rounded-lg border-2 border-primary/20 bg-primary/5">
+            <AnimatePresence mode="popLayout">
+              <motion.div
+                key={servings}
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: -20, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                className="absolute inset-0 flex items-center justify-center text-2xl font-bold tabular-nums text-primary"
+              >
+                {servings}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+          <button
+            onClick={() => setServings(servings + 1)}
+            className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-white shadow-sm transition-all hover:border-primary hover:shadow active:scale-95"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
+          <span className="text-xs text-muted-foreground ml-2">份</span>
+        </div>
+
+        {/* 开始烹饪按钮 */}
+        <Link
+          href={`/recipe/${recipe.id}/cook`}
+          className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary/90 hover:shadow active:scale-95 w-full"
+        >
+          <Play className="h-4 w-4" />
+          准备完毕，开始烹饪
+        </Link>
         </div>
       </div>
     </div>

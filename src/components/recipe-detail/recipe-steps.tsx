@@ -61,7 +61,7 @@ export function RecipeSteps({ recipe }: RecipeStepsProps) {
   return (
     <div>
       <h2 className="mb-4 text-xl font-bold">制作步骤</h2>
-      <div className="grid gap-4 overflow-hidden rounded-xl border border-border/60 bg-white p-4 lg:grid-cols-[400px_1fr]" style={{ height: '60vh' }}>
+      <div className="grid gap-4 overflow-hidden rounded-xl border border-border/60 bg-white p-4 h-[75vh] lg:h-[60vh] lg:grid-cols-[400px_1fr]">
         {/* 左：步骤图轮播 16:9 比例 */}
         <div className="flex items-center justify-center">
           <div className="w-full max-w-[400px]">
@@ -86,7 +86,7 @@ export function RecipeSteps({ recipe }: RecipeStepsProps) {
         </div>
 
         {/* 右：步骤列表 固定高度可滚动 */}
-        <div ref={stepsContainerRef} className="-mr-4 space-y-2 overflow-y-auto pr-4" style={{ height: 'calc(60vh - 2rem)' }}>
+        <div ref={stepsContainerRef} className="-mr-4 space-y-2 overflow-y-auto pr-4 h-[calc(75vh-2rem)] lg:h-[calc(60vh-2rem)]">
           {recipe.steps.map((step, i) => (
             <motion.div
               key={i}

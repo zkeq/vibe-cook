@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { ChefHat, Star, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChefHat, Star, Search, ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { RecipeSummary } from "@/lib/types";
@@ -12,18 +12,29 @@ interface RecipeSidebarProps {
   recipes: RecipeSummary[];
   collapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
+  mobileOpen?: boolean;
+  onMobileOpenChange?: (open: boolean) => void;
 }
 
-export function RecipeSidebar({ recipes, collapsed: controlledCollapsed, onCollapsedChange }: RecipeSidebarProps) {
+export function RecipeSidebar({
+  recipes,
+  collapsed: controlledCollapsed,
+  onCollapsedChange,
+  mobileOpen: controlledMobileOpen,
+  onMobileOpenChange
+}: RecipeSidebarProps) {
   const [internalCollapsed, setInternalCollapsed] = useState(false);
   const collapsed = controlledCollapsed !== undefined ? controlledCollapsed : internalCollapsed;
   const setCollapsed = onCollapsedChange || setInternalCollapsed;
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("全部");
-  const [width, setWidth] = useState(240); // 默认宽度 220 和 256 的中间
-  const [tempWidth, setTempWidth] = useState(240); // 临时宽度，拖动时实时更新
+  const [width, setWidth] = useState(240);
+  const [tempWidth, setTempWidth] = useState(240);
   const [isDragging, setIsDragging] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [internalMobileOpen, setInternalMobileOpen] = useState(false);
+  const mobileOpen = controlledMobileOpen !== undefined ? controlledMobileOpen : internalMobileOpen;
+  const setMobileOpen = onMobileOpenChange || setInternalMobileOpen;
   const sidebarRef = useRef<HTMLElement>(null);
   const pathname = usePathname();
 
@@ -86,17 +97,44 @@ export function RecipeSidebar({ recipes, collapsed: controlledCollapsed, onColla
 
   return (
     <>
+      {/* 移动端遮罩 */}
+      {mobileOpen && mounted && createPortal(
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setMobileOpen(false)}
+        />,
+        document.body
+      )}
+
+      {/* 侧边栏 */}
       <aside
         ref={sidebarRef}
         className={cn(
-          "sticky top-14 hidden h-[calc(100vh-3.5rem)] shrink-0 self-start border-r border-border/60 bg-white transition-all duration-300 lg:block",
-          collapsed && "!w-12"
+          "shrink-0 border-r border-border/60 bg-white transition-all duration-300",
+          // 移动端：固定定位，从顶部栏下方开始，抽屉式
+          "fixed left-0 top-14 h-[calc(100vh-3.5rem)]",
+          mobileOpen ? "translate-x-0" : "-translate-x-full",
+          // 桌面端：粘性定位，正常显示
+          "lg:sticky lg:translate-x-0 lg:self-start",
+          collapsed && "lg:!w-12"
         )}
-        style={{ width: collapsed ? undefined : `${width}px` }}
+        style={{
+          width: collapsed ? undefined : `${width}px`,
+          zIndex: mobileOpen ? 45 : "auto",
+        }}
       >
         <div className="flex h-full flex-col">
           {/* 顶部搜索栏 */}
           <div className={cn("flex h-11 shrink-0 items-center border-b border-border/60 bg-white", collapsed ? "justify-center px-1" : "gap-2 px-3")}>
+            {/* 移动端关闭按钮 */}
+            <button
+              onClick={() => setMobileOpen(false)}
+              className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
+              aria-label="关闭菜单"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
             {!collapsed && (
               <div className="group relative flex-1">
                 <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
@@ -111,7 +149,7 @@ export function RecipeSidebar({ recipes, collapsed: controlledCollapsed, onColla
             )}
             <button
               onClick={() => setCollapsed(!collapsed)}
-              className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="hidden rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:block"
               title={collapsed ? "展开" : "收起"}
             >
               {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}

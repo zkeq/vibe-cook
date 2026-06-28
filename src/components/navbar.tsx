@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChefHat, BookOpen, Search } from "lucide-react";
+import { ChefHat, BookOpen, Search, Menu } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { useIntro } from "@/lib/intro-context";
@@ -13,7 +13,12 @@ const navItems = [
   { href: "/explore", label: "发现", icon: Search },
 ];
 
-export function Navbar() {
+interface NavbarProps {
+  onMenuClick?: () => void;
+  showMenuButton?: boolean;
+}
+
+export function Navbar({ onMenuClick, showMenuButton = false }: NavbarProps = {}) {
   const pathname = usePathname();
   const { phase } = useIntro();
   const visible = phase === "app" || phase === "done";
@@ -50,8 +55,8 @@ export function Navbar() {
           />
         </div>
 
-        {/* Nav links */}
-        <nav className="flex items-center gap-1">
+        {/* Nav links - 桌面端显示 */}
+        <nav className="hidden items-center gap-1 lg:flex">
           {navItems.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
             return (
@@ -66,11 +71,22 @@ export function Navbar() {
                 )}
               >
                 <Icon className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">{label}</span>
+                <span>{label}</span>
               </Link>
             );
           })}
         </nav>
+
+        {/* 移动端菜单按钮 */}
+        {showMenuButton && (
+          <button
+            onClick={onMenuClick}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-muted-foreground transition-all hover:bg-muted hover:text-foreground active:scale-95 lg:hidden"
+            aria-label="打开菜单"
+          >
+            <Menu className="h-4 w-4" />
+          </button>
+        )}
       </div>
     </motion.header>
   );

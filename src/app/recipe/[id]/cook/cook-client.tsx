@@ -354,31 +354,31 @@ export function CookClient({ recipe }: CookClientProps) {
             {/* 右侧：控制按钮组 */}
             <div className="flex items-center gap-3 shrink-0 ml-6">
               {/* 导航控制 */}
-              <div className="flex flex-col">
+              <div className="flex flex-col gap-2">
                 <button
                   onClick={handlePrev}
                   disabled={currentStep === 0}
                   className={cn(
-                    "flex items-center justify-center h-8 px-4 text-xs font-bold border-b border-border transition-all",
+                    "flex items-center justify-center h-12 px-6 text-sm font-bold rounded-lg transition-all active:scale-95 border",
                     currentStep === 0
-                      ? "bg-muted/30 text-muted-foreground cursor-not-allowed"
-                      : "bg-white hover:bg-muted/50 text-foreground"
+                      ? "bg-neutral-50 text-neutral-300 border-neutral-200 cursor-not-allowed active:scale-100"
+                      : "bg-white text-foreground hover:bg-neutral-50 border-border"
                   )}
                 >
-                  <ChevronUp className="h-3 w-3 mr-1" />
+                  <ChevronUp className="h-5 w-5 mr-1" />
                   上一步
                 </button>
                 <button
                   onClick={handleNext}
                   disabled={currentStep === recipe.steps.length - 1}
                   className={cn(
-                    "flex items-center justify-center h-8 px-4 text-xs font-bold transition-all",
+                    "flex items-center justify-center h-12 px-6 text-sm font-bold rounded-lg transition-all active:scale-95 border",
                     currentStep === recipe.steps.length - 1
-                      ? "bg-muted/30 text-muted-foreground cursor-not-allowed"
-                      : "bg-white hover:bg-muted/50 text-foreground"
+                      ? "bg-neutral-50 text-neutral-300 border-neutral-200 cursor-not-allowed active:scale-100"
+                      : "bg-white text-foreground hover:bg-neutral-50 border-border"
                   )}
                 >
-                  <ChevronDown className="h-3 w-3 mr-1" />
+                  <ChevronDown className="h-5 w-5 mr-1" />
                   下一步
                 </button>
               </div>
@@ -386,10 +386,10 @@ export function CookClient({ recipe }: CookClientProps) {
               {/* 退出按钮 */}
               <Link
                 href={`/recipe/${recipe.id}`}
-                className="flex items-center justify-center h-16 w-10 border-l border-border bg-white text-muted-foreground transition-all hover:bg-red-50 hover:text-red-500"
+                className="flex items-center justify-center h-[104px] w-12 bg-white text-muted-foreground transition-all hover:bg-red-50 hover:text-red-500 rounded-lg border border-border"
                 title="退出烹饪模式"
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5" />
               </Link>
             </div>
           </div>

@@ -596,38 +596,60 @@ export function CookClient({ recipe }: CookClientProps) {
             {/* 水平滚动步骤导航栏 */}
             <div
               ref={scrollContainerRef}
-              className="flex gap-2.5 overflow-x-auto px-4 pb-3 scrollbar-hide select-none scroll-smooth"
+              className="flex gap-2 overflow-x-auto px-4 pb-3 scrollbar-hide select-none scroll-smooth"
             >
               {recipe.steps.map((step, i) => (
                 <button
                   key={i}
                   onClick={() => setCurrentStep(i)}
                   className={cn(
-                    "flex items-center gap-2 px-3.5 py-2 rounded-xl border-2 transition-all shrink-0 select-none cursor-pointer text-xs font-bold",
+                    "flex items-center gap-2 px-3 py-2 rounded-lg border transition-all shrink-0 select-none cursor-pointer",
                     i === currentStep
-                      ? "border-primary bg-primary/5 text-primary shadow-sm shadow-primary/5"
+                      ? "border-primary bg-primary text-white shadow-sm"
                       : i < currentStep
-                      ? "border-neutral-800 bg-neutral-900 text-white"
-                      : "border-border bg-white text-muted-foreground active:border-neutral-300"
+                      ? "border-neutral-700 bg-neutral-800 text-white"
+                      : "border-border bg-white text-foreground active:border-neutral-300"
                   )}
                   title={step.title}
                 >
-                  {/* 步骤小序号 */}
+                  {/* 步骤序号 */}
                   <span className={cn(
-                    "flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full text-[9px] font-black border transition-all",
+                    "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-black",
                     i === currentStep
-                      ? "bg-primary text-white border-primary"
+                      ? "bg-white text-primary"
                       : i < currentStep
-                      ? "bg-white text-neutral-900 border-white"
-                      : "bg-neutral-100 text-muted-foreground border-neutral-200"
+                      ? "bg-white text-neutral-900"
+                      : "bg-primary/10 text-primary"
                   )}>
                     {i + 1}
                   </span>
-                  
-                  {/* 步骤名 */}
-                  <span className="tracking-tight max-w-[80px] truncate">
-                    {step.title}
-                  </span>
+
+                  {/* 步骤名 + 时长 */}
+                  <div className="flex flex-col gap-0.5">
+                    <span className={cn(
+                      "text-[11px] font-bold tracking-tight truncate max-w-[64px] leading-tight",
+                      i === currentStep
+                        ? "text-white"
+                        : i < currentStep
+                        ? "text-white"
+                        : "text-foreground"
+                    )}>
+                      {step.title}
+                    </span>
+                    {step.duration_sec && (
+                      <span className={cn(
+                        "text-[9px] font-medium flex items-center gap-0.5",
+                        i === currentStep
+                          ? "text-white/70"
+                          : i < currentStep
+                          ? "text-white/50"
+                          : "text-muted-foreground"
+                      )}>
+                        <Clock className="h-2 w-2" />
+                        {Math.ceil(step.duration_sec / 60)}'
+                      </span>
+                    )}
+                  </div>
                 </button>
               ))}
             </div>

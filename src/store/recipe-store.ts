@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Recipe, RecipeSummary } from '@/lib/types';
 import { recipeAPI } from '@/services/recipe-api';
+import { shuffleArray } from '@/lib/array-utils';
 
 const LIMIT_PER_PAGE = 24;
 
@@ -64,8 +65,11 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
       const response = await fetch(url);
       const data = await response.json();
 
+      // 随机打乱菜谱列表
+      const shuffledRecipes = shuffleArray<RecipeSummary>(data.data || []);
+
       set({
-        recipeList: data.data || [],
+        recipeList: shuffledRecipes,
         currentPage: data.page || page,
         totalRecipes: data.total || 0,
         totalPages: Math.ceil((data.total || 0) / LIMIT_PER_PAGE),

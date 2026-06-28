@@ -15,11 +15,13 @@ import { RecipeGrid } from "@/components/home/recipe-grid";
 import { Pagination } from "@/components/ui/pagination";
 import { useIntro }   from "@/lib/intro-context";
 import { cn } from "@/lib/utils";
+import { shuffleArray } from "@/lib/array-utils";
 
 export default function HomePage() {
   const { phase } = useIntro();
   const { recipeList, fetchRecipeList, isLoading, currentPage, totalPages, setCurrentPage, totalRecipes } = useRecipeStore();
   const [marqueeRecipes, setMarqueeRecipes] = useState<RecipeSummary[]>([]);
+  const [marqueeRecipes2, setMarqueeRecipes2] = useState<RecipeSummary[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("全部");
   const entered = phase === "app" || phase === "done";
@@ -53,7 +55,10 @@ export default function HomePage() {
     const loadMarqueeData = async () => {
       try {
         const random = await recipeAPI.getRandomRecipes(48);
-        setMarqueeRecipes(random);
+        // 第一行
+        setMarqueeRecipes(shuffleArray(random));
+        // 第二行：再随机一次
+        setMarqueeRecipes2(shuffleArray(random));
       } catch (error) {
         console.error('Failed to load marquee recipes:', error);
       }
@@ -124,7 +129,7 @@ export default function HomePage() {
         ) : (
           <div className="flex flex-col gap-3 pt-2">
             <Marquee items={marqueeRecipes.length > 0 ? marqueeRecipes : recipeList} />
-            <Marquee items={marqueeRecipes.length > 0 ? marqueeRecipes : recipeList} reverse />
+            <Marquee items={marqueeRecipes2.length > 0 ? marqueeRecipes2 : recipeList} reverse />
           </div>
         )}
       </motion.section>

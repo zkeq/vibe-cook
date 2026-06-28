@@ -12,6 +12,7 @@ import { CATEGORY_GRAD } from "./recipe-card";
 import { HeroLeft } from "./hero-left";
 import { HeroRight } from "./hero-right";
 import { FeatureBar } from "./feature-bar";
+import { shuffleArray } from "@/lib/array-utils";
 
 const HERO_DURATION = 4200;
 const WATERFALL_DURATION = 5000;
@@ -98,6 +99,9 @@ function WaterfallPhase({ items, totalCount }: { items: RecipeSummary[]; totalCo
     baseSpeed * 0.7,  // ~71px/s
   ];
 
+  // 为每一行生成不同的随机菜谱列表
+  const rowItems = speeds.map(() => shuffleArray(items));
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -109,7 +113,7 @@ function WaterfallPhase({ items, totalCount }: { items: RecipeSummary[]; totalCo
       {speeds.map((speed, i) => (
         <MarqueeRow
           key={i}
-          items={i % 2 === 0 ? items : [...items].reverse()}
+          items={rowItems[i]}
           speed={speed}
           reverse={i % 2 === 1}
         />
@@ -171,11 +175,12 @@ export function IntroOverlay() {
     const loadRandomRecipes = async () => {
       try {
         const random = await recipeAPI.getRandomRecipes(48);
-        setDisplayRecipes(random);
+        // 前端再随机打乱一次，确保每次都不同
+        setDisplayRecipes(shuffleArray(random));
       } catch (error) {
         console.error('Failed to load random recipes:', error);
-        // 降级使用前 20 个
-        setDisplayRecipes(recipeList.slice(0, 20));
+        // 降级使用前 20 个并随机打乱
+        setDisplayRecipes(shuffleArray(recipeList.slice(0, 20)));
       }
     };
     loadRandomRecipes();

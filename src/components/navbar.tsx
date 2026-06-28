@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { ChefHat, BookOpen, Search, Menu } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -124,10 +125,12 @@ export function Navbar({ onMenuClick, showMenuButton = false }: NavbarProps = {}
                     className="flex items-start gap-3 border-b border-border p-3 transition-colors hover:bg-muted/50 last:border-b-0"
                   >
                     {recipe.cover_image ? (
-                      <img
+                      <Image
                         src={recipe.cover_image}
                         alt={recipe.title}
-                        className="h-12 w-12 shrink-0 rounded object-cover"
+                        width={48}
+                        height={48}
+                        className="shrink-0 rounded object-cover"
                       />
                     ) : (
                       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-gradient-to-br from-orange-50 to-amber-50">

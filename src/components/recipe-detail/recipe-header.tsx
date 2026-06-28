@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import Image from "next/image";
 import { Star, Minus, Plus, Play, ChefHat, Check } from "lucide-react";
 import Link from "next/link";
 import type { Recipe } from "@/lib/types";
@@ -105,11 +106,16 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
                   >
                     {activeTab === "cover" ? (
                       recipe.cover_image && recipe.cover_image !== "" ? (
-                        <img
-                          src={recipe.cover_image}
-                          alt={recipe.title}
-                          className="h-full w-auto object-contain"
-                        />
+                        <div className="relative h-full w-full flex items-center justify-center">
+                          <Image
+                            src={recipe.cover_image}
+                            alt={recipe.title}
+                            fill
+                            className="object-contain"
+                            sizes="800px"
+                            priority
+                          />
+                        </div>
                       ) : (
                         <ChefHat className="h-16 w-16 text-primary/20" />
                       )
@@ -119,12 +125,14 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
                           href={recipe.overview_image}
                           data-fancybox="gallery"
                           data-caption="流程全解图"
-                          className="block h-full"
+                          className="relative block h-full w-full flex items-center justify-center"
                         >
-                          <img
+                          <Image
                             src={recipe.overview_image}
                             alt="流程全解图"
-                            className="h-full w-auto object-contain cursor-zoom-in"
+                            fill
+                            className="object-contain cursor-zoom-in"
+                            sizes="1200px"
                           />
                         </a>
                       )

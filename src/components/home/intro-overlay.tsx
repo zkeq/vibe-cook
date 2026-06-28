@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import Image from "next/image";
 import { ChefHat } from "lucide-react";
 import { useIntro } from "@/lib/intro-context";
 import { useRecipeStore } from "@/store/recipe-store";
@@ -59,10 +60,12 @@ function MarqueeRow({
             >
               <div className={`relative flex h-32 items-center justify-center bg-gradient-to-br ${grad}`}>
                 {r.cover_image ? (
-                  <img
+                  <Image
                     src={r.cover_image}
                     alt={r.title}
-                    className="absolute inset-0 h-full w-full object-cover"
+                    fill
+                    className="object-cover"
+                    sizes="208px"
                   />
                 ) : (
                   <ChefHat className="h-10 w-10" style={{ color: "rgba(180,120,60,0.35)" }} />

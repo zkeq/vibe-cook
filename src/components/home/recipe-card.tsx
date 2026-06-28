@@ -1,5 +1,6 @@
 import type { RecipeSummary } from "@/lib/types";
 import Link from "next/link";
+import Image from "next/image";
 import { ChefHat, Timer, Flame } from "lucide-react";
 
 const DIFF_LABEL = ["", "简单", "普通", "有点难", "挑战", "大师"];
@@ -20,10 +21,12 @@ export function RecipeCard({ recipe }: { recipe: RecipeSummary }) {
     >
       <div className={`relative flex h-32 items-center justify-center bg-gradient-to-br ${grad}`}>
         {recipe.cover_image ? (
-          <img
+          <Image
             src={recipe.cover_image}
             alt={recipe.title}
-            className="absolute inset-0 h-full w-full object-cover"
+            fill
+            className="object-cover"
+            sizes="208px"
           />
         ) : (
           <ChefHat

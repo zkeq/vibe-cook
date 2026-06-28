@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
 import { ChefHat, Star, Search, ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -328,10 +329,12 @@ export function RecipeSidebar({
                     title={item.title}
                   >
                     {item.cover_image ? (
-                      <img
+                      <Image
                         src={item.cover_image}
                         alt={item.title}
-                        className="absolute inset-0 h-full w-full object-cover opacity-30"
+                        fill
+                        className="object-cover opacity-30"
+                        sizes="40px"
                       />
                     ) : null}
                     <ChefHat className={cn("relative h-3.5 w-3.5 z-10", active ? "text-primary" : "text-muted-foreground")} />
@@ -349,10 +352,12 @@ export function RecipeSidebar({
                   )}
                 >
                   {item.cover_image ? (
-                    <img
+                    <Image
                       src={item.cover_image}
                       alt={item.title}
-                      className="mt-0.5 h-10 w-10 shrink-0 rounded object-cover"
+                      width={40}
+                      height={40}
+                      className="mt-0.5 shrink-0 rounded object-cover"
                     />
                   ) : (
                     <div className={cn(

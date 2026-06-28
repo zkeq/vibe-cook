@@ -19,10 +19,18 @@ export function RecipeCard({ recipe }: { recipe: RecipeSummary }) {
       className="group flex w-52 flex-shrink-0 flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition-shadow hover:shadow-lg"
     >
       <div className={`relative flex h-32 items-center justify-center bg-gradient-to-br ${grad}`}>
-        <ChefHat
-          className="h-10 w-10 transition-transform group-hover:scale-110"
-          style={{ color: "rgba(180,120,60,0.35)" }}
-        />
+        {recipe.cover_image ? (
+          <img
+            src={recipe.cover_image}
+            alt={recipe.title}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : (
+          <ChefHat
+            className="h-10 w-10 transition-transform group-hover:scale-110"
+            style={{ color: "rgba(180,120,60,0.35)" }}
+          />
+        )}
         <span className="absolute left-2.5 top-2.5 rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-medium backdrop-blur-sm">
           {recipe.category}
         </span>

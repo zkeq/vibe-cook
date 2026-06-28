@@ -57,8 +57,16 @@ function MarqueeRow({
               key={`${r.id}-${i}`}
               className="w-52 flex-shrink-0 overflow-hidden rounded-2xl border border-[#e5e5e5] bg-white shadow-sm"
             >
-              <div className={`flex h-32 items-center justify-center bg-gradient-to-br ${grad}`}>
-                <ChefHat className="h-10 w-10" style={{ color: "rgba(180,120,60,0.35)" }} />
+              <div className={`relative flex h-32 items-center justify-center bg-gradient-to-br ${grad}`}>
+                {r.cover_image ? (
+                  <img
+                    src={r.cover_image}
+                    alt={r.title}
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
+                ) : (
+                  <ChefHat className="h-10 w-10" style={{ color: "rgba(180,120,60,0.35)" }} />
+                )}
               </div>
               <div className="p-3">
                 <p className="text-[13px] font-bold" style={{ color: "#1a1a1a" }}>{r.title}</p>
@@ -159,7 +167,7 @@ export function IntroOverlay() {
   useEffect(() => {
     const loadRandomRecipes = async () => {
       try {
-        const random = await recipeAPI.getRandomRecipes(20);
+        const random = await recipeAPI.getRandomRecipes(48);
         setDisplayRecipes(random);
       } catch (error) {
         console.error('Failed to load random recipes:', error);

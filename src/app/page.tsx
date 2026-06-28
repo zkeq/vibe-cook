@@ -52,7 +52,7 @@ export default function HomePage() {
   useEffect(() => {
     const loadMarqueeData = async () => {
       try {
-        const random = await recipeAPI.getRandomRecipes(24);
+        const random = await recipeAPI.getRandomRecipes(48);
         setMarqueeRecipes(random);
       } catch (error) {
         console.error('Failed to load marquee recipes:', error);

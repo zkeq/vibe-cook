@@ -96,10 +96,18 @@ export function RecipeGrid({
             <Link key={r.id} href={`/recipe/${r.id}`} className="group block">
               <div className="overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition-shadow hover:shadow-md">
                 <div className={`relative flex h-36 items-center justify-center bg-gradient-to-br ${grad}`}>
-                  <ChefHat
-                    className="h-12 w-12 transition-transform group-hover:scale-110"
-                    style={{ color: "rgba(180,120,60,0.3)" }}
-                  />
+                  {r.cover_image ? (
+                    <img
+                      src={r.cover_image}
+                      alt={r.title}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  ) : (
+                    <ChefHat
+                      className="h-12 w-12 transition-transform group-hover:scale-110"
+                      style={{ color: "rgba(180,120,60,0.3)" }}
+                    />
+                  )}
                   <span className="absolute left-2.5 top-2.5 rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-medium backdrop-blur-sm">
                     {r.category}
                   </span>

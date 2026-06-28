@@ -298,12 +298,19 @@ export function RecipeSidebar({
                     key={item.id}
                     href={`/recipe/${item.id}`}
                     className={cn(
-                      "flex h-10 items-center justify-center border-b border-border/60 transition-colors",
+                      "relative flex h-10 items-center justify-center border-b border-border/60 transition-colors overflow-hidden",
                       active ? "bg-primary/10" : "hover:bg-muted/40"
                     )}
                     title={item.title}
                   >
-                    <ChefHat className={cn("h-3.5 w-3.5", active ? "text-primary" : "text-muted-foreground")} />
+                    {item.cover_image ? (
+                      <img
+                        src={item.cover_image}
+                        alt={item.title}
+                        className="absolute inset-0 h-full w-full object-cover opacity-30"
+                      />
+                    ) : null}
+                    <ChefHat className={cn("relative h-3.5 w-3.5 z-10", active ? "text-primary" : "text-muted-foreground")} />
                   </Link>
                 );
               }
@@ -317,12 +324,20 @@ export function RecipeSidebar({
                     active ? "bg-primary/5" : index % 2 === 0 ? "bg-white hover:bg-muted/30" : "bg-muted/10 hover:bg-muted/30"
                   )}
                 >
-                  <div className={cn(
-                    "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded bg-gradient-to-br",
-                    active ? "from-primary/20 to-primary/10" : "from-orange-50 to-amber-50"
-                  )}>
-                    <ChefHat className={cn("h-3 w-3", active ? "text-primary" : "text-primary/30")} />
-                  </div>
+                  {item.cover_image ? (
+                    <img
+                      src={item.cover_image}
+                      alt={item.title}
+                      className="mt-0.5 h-10 w-10 shrink-0 rounded object-cover"
+                    />
+                  ) : (
+                    <div className={cn(
+                      "mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded bg-gradient-to-br",
+                      active ? "from-primary/20 to-primary/10" : "from-orange-50 to-amber-50"
+                    )}>
+                      <ChefHat className={cn("h-4 w-4", active ? "text-primary" : "text-primary/30")} />
+                    </div>
+                  )}
                   <div className="min-w-0 flex-1">
                     <div className={cn("truncate text-xs font-bold leading-tight", active ? "text-primary" : "text-foreground")}>
                       {item.title}

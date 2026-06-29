@@ -21,7 +21,7 @@ interface RecipeState {
   setCurrentPage: (page: number) => void;
 
   fetchRecipeById: (id: string) => Promise<void>;
-  fetchRecipeList: (page?: number) => Promise<void>;
+  fetchRecipeList: (page?: number, category?: string) => Promise<void>;
   searchRecipes: (query: string) => Promise<void>;
 }
 

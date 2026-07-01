@@ -15,6 +15,13 @@ export default function CookPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  // 设置页面标题
+  useEffect(() => {
+    if (currentRecipe) {
+      document.title = `烹饪 ${currentRecipe.title} - Vibe Cook`;
+    }
+  }, [currentRecipe]);
+
   if (isLoading || !currentRecipe) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-neutral-50">

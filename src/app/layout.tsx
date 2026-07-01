@@ -16,6 +16,10 @@ export default function RootLayout({
 
   return (
     <html lang="zh-CN" className="h-full">
+      <head>
+        <title>Vibe Cook - 跟着做就会</title>
+        <meta name="description" content="精选美食菜谱，跟着做就会" />
+      </head>
       <body className="min-h-full bg-background text-foreground antialiased">
         <Providers>
           {!isFullscreenPage && <Navbar />}

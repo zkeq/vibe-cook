@@ -26,6 +26,14 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("全部");
   const entered = phase === "app" || phase === "done";
 
+  // 设置页面标题
+  useEffect(() => {
+    const title = selectedCategory === "全部"
+      ? "Vibe Cook - 跟着做就会"
+      : `${selectedCategory} - Vibe Cook`;
+    document.title = title;
+  }, [selectedCategory]);
+
   // 加载分类列表
   useEffect(() => {
     const loadCategories = async () => {

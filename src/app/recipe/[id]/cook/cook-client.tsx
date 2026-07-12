@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, X, Clock, ChefHat, Play, Pause, RotateCcw, Volume2, VolumeX } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, X, Clock, ChefHat, Play, Pause, RotateCcw, Volume2, VolumeX, Settings } from "lucide-react";
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import type { Recipe } from "@/lib/types";
@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { requestWakeLock, releaseWakeLock, reacquireOnVisible } from "@/lib/wake-lock";
 import { Fancybox as NativeFancybox } from "@fancyapps/ui";
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
+import { TtsSettingsPanel, loadTtsSettings, type TtsSettings } from "@/components/cook/tts-settings-panel";
 
 const renderHighlightedTitle = (title: string) => {
   const verbs = ["洗净", "合炒", "调味出锅", "切块", "打鸡蛋", "煎鸡蛋", "盛出", "炒", "切", "打", "煎", "煮", "蒸", "炖", "拌", "去皮", "腌制", "滑炒", "爆香", "勾芡", "备菜"];
@@ -95,6 +96,8 @@ export function CookClient({ recipe }: CookClientProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [ttsEnabled, setTtsEnabled] = useState(false);
+  const [ttsSettings, setTtsSettings] = useState<TtsSettings>({ rate: 1.12, voiceURI: "" });
+  const [ttsSettingsOpen, setTtsSettingsOpen] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const stepImageContainerRef = useRef<HTMLDivElement>(null);
@@ -138,7 +141,7 @@ export function CookClient({ recipe }: CookClientProps) {
     };
   }, []);
 
-  // 从 localStorage 读取侧边栏宽度
+  // 从 localStorage 读取侧边栏宽度 & TTS 设置
   useEffect(() => {
     setMounted(true);
     const savedWidth = localStorage.getItem("cook-sidebar-width");
@@ -149,6 +152,7 @@ export function CookClient({ recipe }: CookClientProps) {
         setTempWidth(parsedWidth);
       }
     }
+    setTtsSettings(loadTtsSettings());
   }, []);
 
   // 拖动处理
@@ -206,10 +210,14 @@ export function CookClient({ recipe }: CookClientProps) {
     const text = `第${step.index}步，${step.title}。${step.instruction}`;
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = "zh-CN";
-    utter.rate = 1.12;
+    utter.rate = ttsSettings.rate;
+    if (ttsSettings.voiceURI) {
+      const v = window.speechSynthesis.getVoices().find(x => x.voiceURI === ttsSettings.voiceURI);
+      if (v) utter.voice = v;
+    }
     window.speechSynthesis.speak(utter);
     return () => { window.speechSynthesis.cancel(); };
-  }, [currentStep, ttsEnabled, recipe.steps]);
+  }, [currentStep, ttsEnabled, ttsSettings, recipe.steps]);
 
   // 步骤正计时逻辑
   useEffect(() => {
@@ -420,19 +428,28 @@ export function CookClient({ recipe }: CookClientProps) {
                 </button>
               </div>
 
-              {/* TTS 朗读开关 */}
-              <button
-                onClick={() => setTtsEnabled(!ttsEnabled)}
-                className={cn(
-                  "flex items-center justify-center h-26 w-11 rounded-lg border transition-all active:scale-[0.97]",
-                  ttsEnabled
-                    ? "bg-primary text-white border-primary"
-                    : "bg-white text-neutral-500 border-neutral-300 hover:bg-neutral-50"
-                )}
-                title={ttsEnabled ? "关闭朗读" : "开启朗读"}
-              >
-                {ttsEnabled ? <Volume2 className="h-4.5 w-4.5" /> : <VolumeX className="h-4.5 w-4.5" />}
-              </button>
+              {/* TTS 朗读开关 + 设置 */}
+              <div className="flex flex-col gap-1">
+                <button
+                  onClick={() => setTtsEnabled(!ttsEnabled)}
+                  className={cn(
+                    "flex items-center justify-center h-[50px] w-11 rounded-lg border transition-all active:scale-[0.97]",
+                    ttsEnabled
+                      ? "bg-primary text-white border-primary"
+                      : "bg-white text-neutral-500 border-neutral-300 hover:bg-neutral-50"
+                  )}
+                  title={ttsEnabled ? "关闭朗读" : "开启朗读"}
+                >
+                  {ttsEnabled ? <Volume2 className="h-4.5 w-4.5" /> : <VolumeX className="h-4.5 w-4.5" />}
+                </button>
+                <button
+                  onClick={() => setTtsSettingsOpen(true)}
+                  className="flex items-center justify-center h-[50px] w-11 rounded-lg border border-neutral-300 bg-white text-neutral-400 hover:bg-neutral-50 hover:text-neutral-600 transition-all active:scale-[0.97]"
+                  title="朗读设置"
+                >
+                  <Settings className="h-4 w-4" />
+                </button>
+              </div>
 
               {/* 退出按钮 */}
               <Link
@@ -656,6 +673,13 @@ export function CookClient({ recipe }: CookClientProps) {
                   title={ttsEnabled ? "关闭朗读" : "开启朗读"}
                 >
                   {ttsEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                </button>
+                <button
+                  onClick={() => setTtsSettingsOpen(true)}
+                  className="flex items-center justify-center h-8 w-8 rounded-full bg-neutral-100/80 text-muted-foreground active:bg-neutral-200 transition-all"
+                  title="朗读设置"
+                >
+                  <Settings className="h-3.5 w-3.5" />
                 </button>
                 <div className="text-xs font-bold text-muted-foreground font-mono">
                   <span className="text-primary font-black">{String(currentStep + 1).padStart(2, '0')}</span>
@@ -948,6 +972,14 @@ export function CookClient({ recipe }: CookClientProps) {
 
         </div>
       </main>
+
+      {/* TTS 设置面板 */}
+      <TtsSettingsPanel
+        open={ttsSettingsOpen}
+        onClose={() => setTtsSettingsOpen(false)}
+        settings={ttsSettings}
+        onChange={setTtsSettings}
+      />
     </div>
   );
 }

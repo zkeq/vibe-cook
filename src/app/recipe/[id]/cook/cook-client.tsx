@@ -433,7 +433,7 @@ export function CookClient({ recipe }: CookClientProps) {
                 <button
                   onClick={() => setTtsEnabled(!ttsEnabled)}
                   className={cn(
-                    "flex items-center justify-center h-[50px] w-11 rounded-lg border transition-all active:scale-[0.97]",
+                    "flex items-center justify-center h-12.5 w-11 rounded-lg border transition-all active:scale-[0.97]",
                     ttsEnabled
                       ? "bg-primary text-white border-primary"
                       : "bg-white text-neutral-500 border-neutral-300 hover:bg-neutral-50"
@@ -444,7 +444,7 @@ export function CookClient({ recipe }: CookClientProps) {
                 </button>
                 <button
                   onClick={() => setTtsSettingsOpen(true)}
-                  className="flex items-center justify-center h-[50px] w-11 rounded-lg border border-neutral-300 bg-white text-neutral-400 hover:bg-neutral-50 hover:text-neutral-600 transition-all active:scale-[0.97]"
+                  className="flex items-center justify-center h-12.5 w-11 rounded-lg border border-neutral-300 bg-white text-neutral-400 hover:bg-neutral-50 hover:text-neutral-600 transition-all active:scale-[0.97]"
                   title="朗读设置"
                 >
                   <Settings className="h-4 w-4" />

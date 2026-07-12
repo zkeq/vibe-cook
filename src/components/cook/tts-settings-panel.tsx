@@ -101,7 +101,7 @@ export function TtsSettingsPanel({ open, onClose, settings, onChange }: Props) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.97 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="fixed z-[61] bottom-0 left-0 right-0 lg:bottom-auto lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 lg:w-[420px] bg-white rounded-t-2xl lg:rounded-2xl shadow-2xl border border-border overflow-hidden"
+            className="fixed z-[61] bottom-0 left-0 right-0 lg:bottom-auto lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 lg:w-[420px] bg-white rounded-t-2xl lg:rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col max-h-[85vh] lg:max-h-[80vh]"
           >
             {/* 顶部标题栏 */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-border/60">
@@ -119,7 +119,7 @@ export function TtsSettingsPanel({ open, onClose, settings, onChange }: Props) {
               </button>
             </div>
 
-            <div className="p-5 space-y-6">
+            <div className="p-5 space-y-6 overflow-y-auto flex-1">
               {/* 速度 */}
               <div>
                 <div className="flex items-center gap-1.5 mb-3">
@@ -167,7 +167,7 @@ export function TtsSettingsPanel({ open, onClose, settings, onChange }: Props) {
                     <span className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">朗读音色</span>
                     <span className="text-[10px] text-muted-foreground ml-1">（点击可试听）</span>
                   </div>
-                  <div className="space-y-1.5 max-h-44 overflow-y-auto">
+                  <div className="space-y-1.5">
                     {voices.map(v => (
                       <button
                         key={v.voiceURI}

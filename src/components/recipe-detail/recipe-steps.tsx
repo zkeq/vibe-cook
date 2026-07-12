@@ -79,42 +79,38 @@ export function RecipeSteps({ recipe }: RecipeStepsProps) {
     <div>
       <h2 className="mb-4 text-xl font-bold">制作步骤</h2>
       <div className="grid gap-4 overflow-hidden rounded-xl border border-border/60 bg-white p-4 h-[75vh] lg:h-[60vh] lg:grid-cols-[400px_1fr]">
-        {/* 左：步骤图轮播 16:9 比例 */}
-        <div className="flex items-center justify-center">
-          <div className="w-full max-w-[400px]">
-            <div ref={imageContainerRef} className="aspect-[16/9] overflow-hidden rounded-xl bg-gradient-to-br from-orange-50 to-amber-50">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={currentStep}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="flex h-full items-center justify-center text-center"
+        {/* 左：步骤图 */}
+        <div ref={imageContainerRef} className="overflow-hidden rounded-xl bg-gradient-to-br from-orange-50 to-amber-50">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="flex h-full items-center justify-center text-center"
+            >
+              {recipe.steps[currentStep]?.image ? (
+                <a
+                  data-fancybox="steps"
+                  href={recipe.steps[currentStep].image}
+                  data-caption={`步骤 ${currentStep + 1}：${recipe.steps[currentStep].title}`}
+                  className="block h-full w-full"
                 >
-                  {recipe.steps[currentStep]?.image ? (
-                    <a
-                      data-fancybox="steps"
-                      href={recipe.steps[currentStep].image}
-                      data-caption={`步骤 ${currentStep + 1}：${recipe.steps[currentStep].title}`}
-                      className="block h-full w-full"
-                    >
-                      <img
-                        src={recipe.steps[currentStep].image}
-                        alt={recipe.steps[currentStep].title}
-                        className="h-full w-full object-contain cursor-zoom-in"
-                      />
-                    </a>
-                  ) : (
-                    <div>
-                      <ChefHat className="mx-auto mb-2 h-20 w-20 text-primary/20" />
-                      <div className="text-sm text-muted-foreground">步骤 {currentStep + 1}</div>
-                    </div>
-                  )}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-          </div>
+                  <img
+                    src={recipe.steps[currentStep].image}
+                    alt={recipe.steps[currentStep].title}
+                    className="h-full w-full object-contain cursor-zoom-in"
+                  />
+                </a>
+              ) : (
+                <div>
+                  <ChefHat className="mx-auto mb-2 h-20 w-20 text-primary/20" />
+                  <div className="text-sm text-muted-foreground">步骤 {currentStep + 1}</div>
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* 右：步骤列表 固定高度可滚动 */}

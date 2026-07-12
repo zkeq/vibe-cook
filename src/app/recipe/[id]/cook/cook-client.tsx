@@ -206,7 +206,7 @@ export function CookClient({ recipe }: CookClientProps) {
     const text = `第${step.index}步，${step.title}。${step.instruction}`;
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = "zh-CN";
-    utter.rate = 0.9;
+    utter.rate = 1.12;
     window.speechSynthesis.speak(utter);
     return () => { window.speechSynthesis.cancel(); };
   }, [currentStep, ttsEnabled, recipe.steps]);

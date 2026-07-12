@@ -8,6 +8,8 @@ import { createPortal } from "react-dom";
 import type { Recipe } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { requestWakeLock, releaseWakeLock, reacquireOnVisible } from "@/lib/wake-lock";
+import { Fancybox as NativeFancybox } from "@fancyapps/ui";
+import "@fancyapps/ui/dist/fancybox/fancybox.css";
 
 const renderHighlightedTitle = (title: string) => {
   const verbs = ["洗净", "合炒", "调味出锅", "切块", "打鸡蛋", "煎鸡蛋", "盛出", "炒", "切", "打", "煎", "煮", "蒸", "炖", "拌", "去皮", "腌制", "滑炒", "爆香", "勾芡", "备菜"];
@@ -94,6 +96,22 @@ export function CookClient({ recipe }: CookClientProps) {
   const [mounted, setMounted] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const stepImageContainerRef = useRef<HTMLDivElement>(null);
+
+  // Fancybox 步骤图放大
+  useEffect(() => {
+    const container = stepImageContainerRef.current;
+    if (!container) return;
+    NativeFancybox.bind(container, "[data-fancybox]", {
+      Toolbar: {
+        display: { left: [], middle: [], right: ["zoom", "fullscreen", "close"] },
+      },
+    } as any);
+    return () => {
+      NativeFancybox.unbind(container);
+      NativeFancybox.close();
+    };
+  }, []);
 
   // 移动端步骤条自动居中滚动
   useEffect(() => {
@@ -404,7 +422,7 @@ export function CookClient({ recipe }: CookClientProps) {
               {/* 左侧 70% */}
               <div className="col-span-7 flex flex-col gap-6 h-full overflow-hidden">
                 {/* 步骤图区域 */}
-                <div className="flex-[8] rounded-2xl border border-border bg-white flex flex-col items-center justify-center overflow-hidden relative shadow-sm">
+                <div ref={stepImageContainerRef} className="flex-[8] rounded-2xl border border-border bg-white flex flex-col items-center justify-center overflow-hidden relative shadow-sm">
                   <div className="absolute inset-0 opacity-25 pointer-events-none"
                     style={{
                       backgroundImage: "radial-gradient(circle, #e0e0e0 1.2px, transparent 1.2px)",
@@ -421,11 +439,18 @@ export function CookClient({ recipe }: CookClientProps) {
                       className="flex flex-col items-center justify-center h-full w-full p-4 lg:p-6 z-10"
                     >
                       {currentStepData.image ? (
-                        <img
-                          src={currentStepData.image}
-                          alt={currentStepData.title}
-                          className="h-full w-full object-cover rounded-xl"
-                        />
+                        <a
+                          data-fancybox="cook-steps"
+                          href={currentStepData.image}
+                          data-caption={`步骤 ${currentStep + 1}：${currentStepData.title}`}
+                          className="block h-full w-full"
+                        >
+                          <img
+                            src={currentStepData.image}
+                            alt={currentStepData.title}
+                            className="h-full w-full object-contain rounded-xl cursor-zoom-in"
+                          />
+                        </a>
                       ) : (
                         // 无图时的 ChefHat 图标及大字标题
                         <div className="text-center">
@@ -679,11 +704,18 @@ export function CookClient({ recipe }: CookClientProps) {
                   className="flex items-center justify-center h-full w-full p-2 z-10"
                 >
                   {currentStepData.image ? (
-                    <img
-                      src={currentStepData.image}
-                      alt={currentStepData.title}
-                      className="h-full w-full object-cover rounded-xl"
-                    />
+                    <a
+                      data-fancybox="cook-steps"
+                      href={currentStepData.image}
+                      data-caption={`步骤 ${currentStep + 1}：${currentStepData.title}`}
+                      className="block h-full w-full"
+                    >
+                      <img
+                        src={currentStepData.image}
+                        alt={currentStepData.title}
+                        className="h-full w-full object-contain rounded-xl cursor-zoom-in"
+                      />
+                    </a>
                   ) : (
                     <div className="text-center py-6">
                       <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-orange-50/50 border border-orange-100 shadow-sm mb-2.5">

@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { ChefHat, Clock } from "lucide-react";
 import type { Recipe } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { Fancybox as NativeFancybox } from "@fancyapps/ui";
+import "@fancyapps/ui/dist/fancybox/fancybox.css";
 
 interface RecipeStepsProps {
   recipe: Recipe;
@@ -14,6 +16,21 @@ export function RecipeSteps({ recipe }: RecipeStepsProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
   const stepsContainerRef = useRef<HTMLDivElement>(null);
+  const imageContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = imageContainerRef.current;
+    if (!container) return;
+    NativeFancybox.bind(container, "[data-fancybox]", {
+      Toolbar: {
+        display: { left: [], middle: [], right: ["zoom", "fullscreen", "close"] },
+      },
+    } as any);
+    return () => {
+      NativeFancybox.unbind(container);
+      NativeFancybox.close();
+    };
+  }, []);
 
   // 7秒自动切换步骤
   useEffect(() => {
@@ -65,7 +82,7 @@ export function RecipeSteps({ recipe }: RecipeStepsProps) {
         {/* 左：步骤图轮播 16:9 比例 */}
         <div className="flex items-center justify-center">
           <div className="w-full max-w-[400px]">
-            <div className="aspect-[16/9] overflow-hidden rounded-xl bg-gradient-to-br from-orange-50 to-amber-50">
+            <div ref={imageContainerRef} className="aspect-[16/9] overflow-hidden rounded-xl bg-gradient-to-br from-orange-50 to-amber-50">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={currentStep}
@@ -75,10 +92,25 @@ export function RecipeSteps({ recipe }: RecipeStepsProps) {
                   transition={{ duration: 0.3 }}
                   className="flex h-full items-center justify-center text-center"
                 >
-                  <div>
-                    <ChefHat className="mx-auto mb-2 h-20 w-20 text-primary/20" />
-                    <div className="text-sm text-muted-foreground">步骤 {currentStep + 1}</div>
-                  </div>
+                  {recipe.steps[currentStep]?.image ? (
+                    <a
+                      data-fancybox="steps"
+                      href={recipe.steps[currentStep].image}
+                      data-caption={`步骤 ${currentStep + 1}：${recipe.steps[currentStep].title}`}
+                      className="block h-full w-full"
+                    >
+                      <img
+                        src={recipe.steps[currentStep].image}
+                        alt={recipe.steps[currentStep].title}
+                        className="h-full w-full object-contain cursor-zoom-in"
+                      />
+                    </a>
+                  ) : (
+                    <div>
+                      <ChefHat className="mx-auto mb-2 h-20 w-20 text-primary/20" />
+                      <div className="text-sm text-muted-foreground">步骤 {currentStep + 1}</div>
+                    </div>
+                  )}
                 </motion.div>
               </AnimatePresence>
             </div>

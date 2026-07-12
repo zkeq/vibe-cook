@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { Suspense, useState, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { IntroProvider } from "@/lib/intro-context";
 import { IntroOverlay } from "@/components/home/intro-overlay";
@@ -21,10 +21,12 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={client}>
-      <IntroProvider>
-        <IntroOverlay />
-        {children}
-      </IntroProvider>
+      <Suspense>
+        <IntroProvider>
+          <IntroOverlay />
+          {children}
+        </IntroProvider>
+      </Suspense>
     </QueryClientProvider>
   );
 }

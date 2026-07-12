@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, X, Clock, ChefHat, Play, Pause, RotateCcw } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, X, Clock, ChefHat, Play, Pause, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import type { Recipe } from "@/lib/types";
@@ -94,6 +94,7 @@ export function CookClient({ recipe }: CookClientProps) {
   const [tempWidth, setTempWidth] = useState(320);
   const [isDragging, setIsDragging] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [ttsEnabled, setTtsEnabled] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const stepImageContainerRef = useRef<HTMLDivElement>(null);
@@ -194,6 +195,21 @@ export function CookClient({ recipe }: CookClientProps) {
     setIsStepTimerRunning(false);
     setStepTimeElapsed(0);
   }, [currentStep]);
+
+  // TTS 朗读当前步骤
+  useEffect(() => {
+    if (!ttsEnabled) return;
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    const step = recipe.steps[currentStep];
+    if (!step) return;
+    window.speechSynthesis.cancel();
+    const text = `第${step.index}步，${step.title}。${step.instruction}`;
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = "zh-CN";
+    utter.rate = 0.9;
+    window.speechSynthesis.speak(utter);
+    return () => { window.speechSynthesis.cancel(); };
+  }, [currentStep, ttsEnabled, recipe.steps]);
 
   // 步骤正计时逻辑
   useEffect(() => {
@@ -404,6 +420,20 @@ export function CookClient({ recipe }: CookClientProps) {
                 </button>
               </div>
 
+              {/* TTS 朗读开关 */}
+              <button
+                onClick={() => setTtsEnabled(!ttsEnabled)}
+                className={cn(
+                  "flex items-center justify-center h-26 w-11 rounded-lg border transition-all active:scale-[0.97]",
+                  ttsEnabled
+                    ? "bg-primary text-white border-primary"
+                    : "bg-white text-neutral-500 border-neutral-300 hover:bg-neutral-50"
+                )}
+                title={ttsEnabled ? "关闭朗读" : "开启朗读"}
+              >
+                {ttsEnabled ? <Volume2 className="h-4.5 w-4.5" /> : <VolumeX className="h-4.5 w-4.5" />}
+              </button>
+
               {/* 退出按钮 */}
               <Link
                 href={`/recipe/${recipe.id}`}
@@ -613,11 +643,25 @@ export function CookClient({ recipe }: CookClientProps) {
                 {recipe.title}
               </h1>
               
-              {/* 进度数值 */}
-              <div className="text-xs font-bold text-muted-foreground font-mono">
-                <span className="text-primary font-black">{String(currentStep + 1).padStart(2, '0')}</span>
-                <span className="mx-0.5 opacity-60">/</span>
-                <span>{String(recipe.steps.length).padStart(2, '0')}</span>
+              {/* 进度数值 + TTS 开关 */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setTtsEnabled(!ttsEnabled)}
+                  className={cn(
+                    "flex items-center justify-center h-8 w-8 rounded-full transition-all",
+                    ttsEnabled
+                      ? "bg-primary text-white"
+                      : "bg-neutral-100/80 text-muted-foreground active:bg-neutral-200"
+                  )}
+                  title={ttsEnabled ? "关闭朗读" : "开启朗读"}
+                >
+                  {ttsEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                </button>
+                <div className="text-xs font-bold text-muted-foreground font-mono">
+                  <span className="text-primary font-black">{String(currentStep + 1).padStart(2, '0')}</span>
+                  <span className="mx-0.5 opacity-60">/</span>
+                  <span>{String(recipe.steps.length).padStart(2, '0')}</span>
+                </div>
               </div>
             </div>
 

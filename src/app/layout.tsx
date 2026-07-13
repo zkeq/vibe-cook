@@ -17,8 +17,12 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className="h-full">
       <head>
-        <title>Vibe Cook - 跟着做就会</title>
+        <title>灵感厨房 - 跟着做就会</title>
         <meta name="description" content="精选美食菜谱，跟着做就会" />
+        <meta name="theme-color" content="#f5701f" />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body className="min-h-full bg-background text-foreground antialiased">
         <Providers>

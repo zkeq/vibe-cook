@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, X, Clock, ChefHat, Play, Pause, RotateCcw, Volume2, VolumeX, Settings } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, X, Clock, ChefHat, Play, Pause, RotateCcw, Volume2, VolumeX, Settings, ShoppingBasket, Minus, Plus } from "lucide-react";
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import type { Recipe } from "@/lib/types";
@@ -11,6 +11,7 @@ import { requestWakeLock, releaseWakeLock, reacquireOnVisible } from "@/lib/wake
 import { Fancybox as NativeFancybox } from "@fancyapps/ui";
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
 import { TtsSettingsPanel, loadTtsSettings, type TtsSettings } from "@/components/cook/tts-settings-panel";
+import { useUserSettingsStore } from "@/store/user-settings-store";
 
 const renderHighlightedTitle = (title: string) => {
   const verbs = ["洗净", "合炒", "调味出锅", "切块", "打鸡蛋", "煎鸡蛋", "盛出", "炒", "切", "打", "煎", "煮", "蒸", "炖", "拌", "去皮", "腌制", "滑炒", "爆香", "勾芡", "备菜"];
@@ -98,9 +99,42 @@ export function CookClient({ recipe }: CookClientProps) {
   const [ttsEnabled, setTtsEnabled] = useState(false);
   const [ttsSettings, setTtsSettings] = useState<TtsSettings>({ rate: 1.12, voiceURI: "" });
   const [ttsSettingsOpen, setTtsSettingsOpen] = useState(false);
+  const [ingredientsExpanded, setIngredientsExpanded] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const stepImageContainerRef = useRef<HTMLDivElement>(null);
+
+  // 使用全局状态管理份数（与详情页同步）
+  const { servings: globalServings } = useUserSettingsStore();
+  const servings = globalServings[recipe.id] || recipe.servings.base;
+
+  // 计算缩放后的配料
+  const scaledIngredients = recipe.ingredients.map((ing) => {
+    if (!ing.per_serving) return ing;
+    const match = ing.amount.match(/^([\d.]+)/);
+    if (!match) return ing;
+    const baseAmount = parseFloat(match[1]);
+    const scaledAmount = (baseAmount * servings) / recipe.servings.base;
+    const rest = ing.amount.replace(/^[\d.]+/, "");
+    return { ...ing, amount: `${scaledAmount.toFixed(1).replace(/\.0$/, "")}${rest}` };
+  });
+
+  // 渲染配料用量，数字部分橙色高亮
+  const renderIngredientAmount = (amount: string) => {
+    const match = amount.match(/^([\d.]+)(.*)/);
+    if (!match) return <span>{amount}</span>;
+    const [, number, unit] = match;
+    return (
+      <span>
+        <span className="text-primary">{number}</span>
+        {unit}
+      </span>
+    );
+  };
+
+  // Debug: 打印 recipe.servings 数据
+  console.log('🍳 Cook Mode - Recipe Servings:', recipe.servings);
+  console.log('🍳 Cook Mode - Global Servings for this recipe:', servings);
 
   // Fancybox 步骤图放大
   useEffect(() => {
@@ -533,66 +567,149 @@ export function CookClient({ recipe }: CookClientProps) {
                 </div>
               </div>
 
-              {/* 右侧 30% - 注意事项面板 */}
-              <div className="col-span-3 rounded-2xl border border-border bg-white p-5 flex flex-col shadow-sm h-full overflow-hidden">
-                <div className="mb-4 flex items-center gap-2 shrink-0">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                    📋 注意事项 / Cautions
-                  </span>
-                  <div className="h-px flex-1 bg-border" />
+              {/* 右侧 30% - 注意事项与配料面板 */}
+              <div className="col-span-3 rounded-2xl border border-border bg-white flex flex-col shadow-sm h-full overflow-hidden">
+                {/* 顶部 Tab 切换 */}
+                <div className="flex border-b border-border shrink-0">
+                  <button
+                    onClick={() => setIngredientsExpanded(false)}
+                    className={cn(
+                      "flex-1 py-3 text-[10px] font-black uppercase tracking-widest transition-colors",
+                      !ingredientsExpanded
+                        ? "bg-white text-foreground border-b-2 border-primary"
+                        : "bg-neutral-50/50 text-muted-foreground hover:bg-neutral-50"
+                    )}
+                  >
+                    📋 注意事项
+                  </button>
+                  <button
+                    onClick={() => setIngredientsExpanded(true)}
+                    className={cn(
+                      "flex-1 py-3 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-1.5",
+                      ingredientsExpanded
+                        ? "bg-white text-foreground border-b-2 border-primary"
+                        : "bg-neutral-50/50 text-muted-foreground hover:bg-neutral-50"
+                    )}
+                  >
+                    <ShoppingBasket className="h-3.5 w-3.5" />
+                    配料表
+                  </button>
                 </div>
 
-                {/* 可滚动注意事项区域 */}
-                <div className="flex-1 overflow-y-auto">
+                {/* 可滚动内容区域 */}
+                <div className="flex-1 overflow-y-auto p-5">
                   <AnimatePresence mode="wait">
-                    <motion.div
-                      key={currentStep}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.2 }}
-                      className="space-y-4"
-                    >
-                      {/* 步骤核心指令 */}
-                      <div className="p-4 rounded-xl bg-neutral-50 border border-border/60">
-                        <p className="text-xs font-semibold leading-relaxed text-foreground/90">
-                          {currentStepData.instruction}
-                        </p>
-                      </div>
-
-                      {/* 小贴士清单 */}
-                      {currentStepData.tips && currentStepData.tips.length > 0 && (
-                        <div className="space-y-2 mt-4 pt-4 border-t border-border/50">
-                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-2">
-                            💡 步骤提示 / Tips
-                          </span>
-                          {currentStepData.tips.map((tip, i) => (
-                            <div key={i} className="flex gap-2 text-xs leading-relaxed text-muted-foreground font-medium">
-                              <span className="text-primary shrink-0 font-bold">•</span>
-                              <span>{tip}</span>
+                    {!ingredientsExpanded ? (
+                      <motion.div
+                        key="cautions"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -10 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <AnimatePresence mode="wait">
+                          <motion.div
+                            key={currentStep}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                            className="space-y-4"
+                          >
+                            {/* 步骤核心指令 */}
+                            <div className="p-4 rounded-xl bg-neutral-50 border border-border/60">
+                              <p className="text-xs font-semibold leading-relaxed text-foreground/90">
+                                {currentStepData.instruction}
+                              </p>
                             </div>
-                          ))}
-                        </div>
-                      )}
 
-                      {/* 产出物 */}
-                      {currentStepData.produces && (
-                        <div className="mt-4 pt-4 border-t border-border/50">
-                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-2">
-                            ✓ 本步产出 / Produces
+                            {/* 小贴士清单 */}
+                            {currentStepData.tips && currentStepData.tips.length > 0 && (
+                              <div className="space-y-2 mt-4 pt-4 border-t border-border/50">
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-2">
+                                  💡 步骤提示 / Tips
+                                </span>
+                                {currentStepData.tips.map((tip, i) => (
+                                  <div key={i} className="flex gap-2 text-xs leading-relaxed text-muted-foreground font-medium">
+                                    <span className="text-primary shrink-0 font-bold">•</span>
+                                    <span>{tip}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* 产出物 */}
+                            {currentStepData.produces && (
+                              <div className="mt-4 pt-4 border-t border-border/50">
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-2">
+                                  ✓ 本步产出 / Produces
+                                </span>
+                                <div className="inline-flex items-center rounded-lg bg-green-50 border border-green-200/50 px-2.5 py-1 text-xs font-bold text-green-700">
+                                  {currentStepData.produces}
+                                </div>
+                              </div>
+                            )}
+                          </motion.div>
+                        </AnimatePresence>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="ingredients"
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 10 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-3"
+                      >
+                        {/* 份量说明 */}
+                        <div className="rounded-xl border border-border/60 bg-neutral-50/50 p-3 text-center">
+                          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                            基于 <span className="text-primary font-black text-sm mx-1">{servings}</span> 人份
                           </span>
-                          <div className="inline-flex items-center rounded-lg bg-green-50 border border-green-200/50 px-2.5 py-1 text-xs font-bold text-green-700">
-                            {currentStepData.produces}
-                          </div>
                         </div>
-                      )}
-                    </motion.div>
+
+                        {/* 配料列表 */}
+                        {scaledIngredients.map((ingredient, i) => (
+                          <div
+                            key={i}
+                            className={cn(
+                              "rounded-xl border transition-colors p-3",
+                              ingredient.optional
+                                ? "bg-neutral-50/50 border-neutral-200/50"
+                                : "bg-white border-border"
+                            )}
+                          >
+                            <div className="flex items-baseline justify-between gap-2">
+                              <span className={cn(
+                                "text-xs font-bold",
+                                ingredient.optional ? "text-muted-foreground" : "text-foreground"
+                              )}>
+                                {ingredient.name}
+                                {ingredient.optional && (
+                                  <span className="ml-1.5 text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider">
+                                    可选
+                                  </span>
+                                )}
+                              </span>
+                              <span className="text-xs font-black tabular-nums">
+                                {renderIngredientAmount(ingredient.amount)}
+                              </span>
+                            </div>
+                            {ingredient.buying_tip && (
+                              <p className="text-[10px] text-muted-foreground leading-relaxed mt-1.5">
+                                💡 {ingredient.buying_tip}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
                   </AnimatePresence>
                 </div>
 
-                {/* 底部固定大屏倒计时控制区 */}
+                {/* Bottom fixed step timer control area */}
                 {currentStepData.duration_sec && (
-                  <div className="mt-4 pt-4 border-t border-border flex flex-col gap-3 shrink-0">
+                  <div className="mt-4 pt-4 border-t border-border flex flex-col gap-3 shrink-0 p-5">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                         ⏱ 步骤计时 / Step Clock
@@ -600,12 +717,12 @@ export function CookClient({ recipe }: CookClientProps) {
                       <Clock className={cn("h-4 w-4", isStepTimerRunning ? "text-primary animate-pulse" : "text-muted-foreground")} />
                     </div>
                     <div className="flex items-center justify-between gap-4">
-                      {/* 大字号时间显示 */}
+                      {/* Large time display */}
                       <span className="text-4xl font-black text-foreground font-mono tabular-nums leading-none tracking-tight">
                         {formatTime(stepTimeElapsed)}
                       </span>
-                      
-                      {/* 大控制按钮 */}
+
+                      {/* Large control buttons */}
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => setIsStepTimerRunning(!isStepTimerRunning)}
@@ -753,7 +870,7 @@ export function CookClient({ recipe }: CookClientProps) {
 
           {/* 2. 移动端主体滚动区 (Scrollable Content Body) */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-6 min-h-0">
-            
+
             {/* 2.1 步骤展示图 (Image or illustration) */}
             <div className="w-full aspect-video md:aspect-[2/1] rounded-2xl border border-border bg-white flex items-center justify-center overflow-hidden relative shadow-sm shrink-0">
               <div className="absolute inset-0 opacity-15 pointer-events-none"
@@ -809,7 +926,77 @@ export function CookClient({ recipe }: CookClientProps) {
               </h2>
             </div>
 
-            {/* 2.3 注意事项与 Tips 卡片 */}
+            {/* 2.3 配料快速查看卡片 */}
+            <div className="bg-gradient-to-br from-orange-50/80 to-amber-50/50 border border-orange-100/70 rounded-2xl p-4 shadow-sm">
+              <button
+                onClick={() => setIngredientsExpanded(!ingredientsExpanded)}
+                className="w-full flex items-center justify-between mb-3"
+              >
+                <div className="flex items-center gap-2">
+                  <ShoppingBasket className="h-4 w-4 text-primary" />
+                  <span className="text-[11px] font-black uppercase tracking-wider text-foreground">
+                    配料表
+                  </span>
+                  <span className="text-[10px] font-medium text-muted-foreground">
+                    （{servings}人份）
+                  </span>
+                </div>
+                <motion.div
+                  animate={{ rotate: ingredientsExpanded ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                </motion.div>
+              </button>
+
+              <AnimatePresence>
+                {ingredientsExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-2 overflow-hidden max-h-64 overflow-y-auto"
+                  >
+                    {scaledIngredients.map((ingredient, i) => (
+                      <div
+                        key={i}
+                        className={cn(
+                          "rounded-lg border p-2.5 transition-colors",
+                          ingredient.optional
+                            ? "bg-white/50 border-orange-200/30"
+                            : "bg-white border-orange-200/50"
+                        )}
+                      >
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className={cn(
+                            "text-xs font-bold",
+                            ingredient.optional ? "text-muted-foreground" : "text-foreground"
+                          )}>
+                            {ingredient.name}
+                            {ingredient.optional && (
+                              <span className="ml-1.5 text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider">
+                                可选
+                              </span>
+                            )}
+                          </span>
+                          <span className="text-xs font-black tabular-nums">
+                            {renderIngredientAmount(ingredient.amount)}
+                          </span>
+                        </div>
+                        {ingredient.buying_tip && (
+                          <p className="text-[10px] text-muted-foreground/80 leading-relaxed mt-1">
+                            💡 {ingredient.buying_tip}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* 2.4 注意事项与 Tips 卡片 */}
             <AnimatePresence mode="wait">
               {((currentStepData.tips && currentStepData.tips.length > 0) || currentStepData.produces) && (
                 <motion.div

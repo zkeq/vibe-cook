@@ -14,12 +14,11 @@ import { Marquee }    from "@/components/home/marquee";
 import { RecipeGrid } from "@/components/home/recipe-grid";
 import { Pagination } from "@/components/ui/pagination";
 import { useIntro }   from "@/lib/intro-context";
-import { cn } from "@/lib/utils";
 import { shuffleArray } from "@/lib/array-utils";
 
 export default function HomePage() {
   const { phase } = useIntro();
-  const { recipeList, fetchRecipeList, isLoading, currentPage, totalPages, setCurrentPage, totalRecipes } = useRecipeStore();
+  const { recipeList, fetchRecipeList, isLoading, currentPage, totalPages, totalRecipes } = useRecipeStore();
   const [marqueeRecipes, setMarqueeRecipes] = useState<RecipeSummary[]>([]);
   const [marqueeRecipes2, setMarqueeRecipes2] = useState<RecipeSummary[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -80,7 +79,7 @@ export default function HomePage() {
     setSelectedCategory(cat);
   };
 
-  const fadeUp = (delay: number) =>
+  const fadeUp = () =>
     entered
       ? { opacity: [0, 1] as number[], y: [40, 0] as number[] }
       : { opacity: 0 };
@@ -98,7 +97,7 @@ export default function HomePage() {
       {/* Hero */}
       <motion.section
         initial={{ opacity: 0 }}
-        animate={fadeUp(0.15)}
+        animate={fadeUp()}
         transition={trans(0.15)}
         className="mx-auto max-w-5xl px-8 pb-4 pt-16"
       >
@@ -112,7 +111,7 @@ export default function HomePage() {
       {/* 五条特性 */}
       <motion.div
         initial={{ opacity: 0 }}
-        animate={fadeUp(0.28)}
+        animate={fadeUp()}
         transition={trans(0.28)}
       >
         <FeatureBar />
@@ -121,7 +120,7 @@ export default function HomePage() {
       {/* 双行无限滚动 */}
       <motion.section
         initial={{ opacity: 0 }}
-        animate={fadeUp(0.38)}
+        animate={fadeUp()}
         transition={trans(0.38)}
         className="border-y border-border bg-white/60 py-6 backdrop-blur-sm"
       >
@@ -147,7 +146,7 @@ export default function HomePage() {
       {/* 食谱网格 */}
       <motion.div
         initial={{ opacity: 0 }}
-        animate={fadeUp(0.48)}
+        animate={fadeUp()}
         transition={trans(0.48)}
         className="pb-8"
       >

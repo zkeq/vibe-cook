@@ -8,7 +8,10 @@ import remarkGfm from "remark-gfm";
 import {
   Check,
   ChefHat,
+  History,
   LoaderCircle,
+  MessageSquare,
+  MessageSquarePlus,
   Send,
   Sparkles,
   Trash2,
@@ -17,16 +20,17 @@ import {
 import type { Recipe } from "@/lib/types";
 import {
   askRecipeAgent,
-  type RecipeAgentChatMessage,
   type RecipeAgentSuggestion,
 } from "@/lib/recipe-agent";
 import { useUserSettingsStore } from "@/store/user-settings-store";
+import {
+  type RecipeAgentConversation,
+  type StoredRecipeAgentMessage,
+  useRecipeAgentHistoryStore,
+} from "@/store/recipe-agent-history-store";
 import { cn } from "@/lib/utils";
 
-interface DisplayMessage extends RecipeAgentChatMessage {
-  id: string;
-  suggestions?: RecipeAgentSuggestion[];
-}
+type DisplayMessage = StoredRecipeAgentMessage;
 
 interface RecipeAgentProps {
   recipe: Recipe;
@@ -40,22 +44,47 @@ const QUICK_QUESTIONS = [
   "有哪些容易失败的地方？",
 ];
 
+function createWelcomeMessage(recipe: Recipe): DisplayMessage {
+  return {
+    id: crypto.randomUUID(),
+    role: "assistant",
+    content: `我是你的菜谱 Agent。可以直接问我怎么调整「${recipe.title}」，我会把建议对应到具体步骤，确认后再添加进页面。`,
+  };
+}
+
+function createConversation(recipe: Recipe): RecipeAgentConversation {
+  const now = new Date().toISOString();
+  return {
+    id: `cook_${crypto.randomUUID().replace(/-/g, "").slice(0, 31)}`,
+    recipeId: recipe.id,
+    recipeTitle: recipe.title,
+    title: "新对话",
+    createdAt: now,
+    updatedAt: now,
+    messages: [createWelcomeMessage(recipe)],
+  };
+}
+
+function formatConversationTime(value: string): string {
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
 export function RecipeAgent({
   recipe,
   currentStepIndex,
   triggerVariant = "detail",
 }: RecipeAgentProps) {
   const [open, setOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [messages, setMessages] = useState<DisplayMessage[]>([
-    {
-      id: "welcome",
-      role: "assistant",
-      content: `我是你的菜谱 Agent。可以直接问我怎么调整「${recipe.title}」，我会把建议对应到具体步骤，确认后再添加进页面。`,
-    },
-  ]);
+  const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { recipeTipAdditions, addRecipeTips, clearRecipeTips } = useUserSettingsStore();
   const addedTips = recipeTipAdditions[recipe.id] || {};
@@ -63,31 +92,120 @@ export function RecipeAgent({
     (total, stepTips) => total + stepTips.length,
     0
   );
-
-  const chatHistory = useMemo<RecipeAgentChatMessage[]>(
-    () => messages.map(({ role, content }) => ({ role, content })),
-    [messages]
+  const conversations = useRecipeAgentHistoryStore((state) => state.conversations);
+  const activeConversationByRecipe = useRecipeAgentHistoryStore(
+    (state) => state.activeConversationByRecipe
   );
+  const upsertConversation = useRecipeAgentHistoryStore(
+    (state) => state.upsertConversation
+  );
+  const removeConversation = useRecipeAgentHistoryStore(
+    (state) => state.removeConversation
+  );
+  const setActiveConversation = useRecipeAgentHistoryStore(
+    (state) => state.setActiveConversation
+  );
+  const activeConversationId = activeConversationByRecipe[recipe.id];
+  const recipeConversations = useMemo(
+    () =>
+      conversations
+        .filter((conversation) => conversation.recipeId === recipe.id)
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+    [conversations, recipe.id]
+  );
+
+  const openConversation = (conversation: RecipeAgentConversation) => {
+    if (loading) return;
+    setActiveConversation(recipe.id, conversation.id);
+    setMessages(conversation.messages);
+    setError("");
+    setInput("");
+    setHistoryOpen(false);
+  };
+
+  const startNewConversation = () => {
+    if (loading) return;
+    const conversation = createConversation(recipe);
+    upsertConversation(conversation);
+    setMessages(conversation.messages);
+    setError("");
+    setInput("");
+    setHistoryOpen(false);
+  };
+
+  const handleOpen = () => {
+    const state = useRecipeAgentHistoryStore.getState();
+    const storedConversations = state.conversations
+      .filter((conversation) => conversation.recipeId === recipe.id)
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    const active = storedConversations.find(
+      (conversation) => conversation.id === state.activeConversationByRecipe[recipe.id]
+    );
+    const conversation = active || storedConversations[0] || createConversation(recipe);
+
+    if (!active && storedConversations.length === 0) {
+      state.upsertConversation(conversation);
+    } else {
+      state.setActiveConversation(recipe.id, conversation.id);
+    }
+    setMessages(conversation.messages);
+    setOpen(true);
+  };
+
+  const deleteConversation = (conversationId: string) => {
+    if (loading) return;
+    const remaining = recipeConversations.filter(
+      (conversation) => conversation.id !== conversationId
+    );
+    removeConversation(recipe.id, conversationId);
+
+    if (activeConversationId === conversationId) {
+      const nextConversation = remaining[0] || createConversation(recipe);
+      if (remaining.length === 0) upsertConversation(nextConversation);
+      setActiveConversation(recipe.id, nextConversation.id);
+      setMessages(nextConversation.messages);
+    }
+  };
 
   const sendQuestion = async (question: string) => {
     const trimmedQuestion = question.trim();
     if (!trimmedQuestion || loading) return;
 
+    let conversation = useRecipeAgentHistoryStore
+      .getState()
+      .conversations.find((item) => item.id === activeConversationId);
+    if (!conversation) {
+      conversation = createConversation(recipe);
+      upsertConversation(conversation);
+    }
+
+    const baseMessages = messages.length > 0 ? messages : conversation.messages;
     const userMessage: DisplayMessage = {
       id: crypto.randomUUID(),
       role: "user",
       content: trimmedQuestion,
     };
     const nextHistory = [
-      ...chatHistory,
+      ...baseMessages.map(({ role, content }) => ({ role, content })),
       { role: "user" as const, content: trimmedQuestion },
     ];
     const assistantMessageId = crypto.randomUUID();
-    setMessages((current) => [
-      ...current,
+    const pendingMessages: DisplayMessage[] = [
+      ...baseMessages,
       userMessage,
       { id: assistantMessageId, role: "assistant", content: "" },
-    ]);
+    ];
+    const title =
+      conversation.title === "新对话"
+        ? trimmedQuestion.replace(/\s+/g, " ").slice(0, 24)
+        : conversation.title;
+    upsertConversation({
+      ...conversation,
+      title,
+      updatedAt: new Date().toISOString(),
+      messages: [...baseMessages, userMessage],
+    });
+    setMessages(pendingMessages);
     setInput("");
     setError("");
     setLoading(true);
@@ -99,12 +217,15 @@ export function RecipeAgent({
       });
     });
 
+    let streamedText = "";
     try {
       const result = await askRecipeAgent(
         recipe,
         nextHistory,
+        conversation.id,
         currentStepIndex,
         (text) => {
+          streamedText += text;
           setMessages((current) =>
             current.map((message) =>
               message.id === assistantMessageId
@@ -114,23 +235,35 @@ export function RecipeAgent({
           );
         }
       );
-      setMessages((current) =>
-        current.map((message) =>
-          message.id === assistantMessageId
-            ? {
-                ...message,
-                content: result.message,
-                suggestions: result.suggestions,
-              }
-            : message
-        )
-      );
+      const assistantMessage: DisplayMessage = {
+        id: assistantMessageId,
+        role: "assistant",
+        content: result.message,
+        suggestions: result.suggestions,
+      };
+      const completedMessages = [...baseMessages, userMessage, assistantMessage];
+      setMessages(completedMessages);
+      upsertConversation({
+        ...conversation,
+        title,
+        updatedAt: new Date().toISOString(),
+        messages: completedMessages,
+      });
     } catch (caughtError) {
-      setMessages((current) =>
-        current.filter(
-          (message) => message.id !== assistantMessageId || message.content.length > 0
-        )
-      );
+      const savedMessages: DisplayMessage[] = streamedText
+        ? [
+            ...baseMessages,
+            userMessage,
+            { id: assistantMessageId, role: "assistant", content: streamedText },
+          ]
+        : [...baseMessages, userMessage];
+      setMessages(savedMessages);
+      upsertConversation({
+        ...conversation,
+        title,
+        updatedAt: new Date().toISOString(),
+        messages: savedMessages,
+      });
       setError(
         caughtError instanceof Error ? caughtError.message : "Agent 暂时没有回应，请稍后重试。"
       );
@@ -158,7 +291,7 @@ export function RecipeAgent({
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
+        onClick={handleOpen}
         className={cn(
           "inline-flex shrink-0 items-center justify-center transition-all active:scale-[0.97]",
           triggerVariant === "detail" &&
@@ -186,7 +319,10 @@ export function RecipeAgent({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  onClick={() => setOpen(false)}
+                  onClick={() => {
+                    setOpen(false);
+                    setHistoryOpen(false);
+                  }}
                   className="fixed inset-0 z-50 bg-neutral-900/20 backdrop-blur-[2px]"
                   aria-label="关闭 Agent"
                 />
@@ -195,7 +331,7 @@ export function RecipeAgent({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 20, scale: 0.985 }}
                   transition={{ type: "spring", stiffness: 360, damping: 32 }}
-                  className="fixed inset-x-3 bottom-3 top-16 z-50 flex flex-col overflow-hidden rounded-xl border border-border/80 bg-[#fdfdfd] shadow-[0_20px_60px_-20px_rgba(120,70,30,0.35)] sm:inset-auto sm:bottom-6 sm:right-6 sm:top-auto sm:h-[min(720px,calc(100vh-3rem))] sm:w-[440px]"
+                  className="fixed inset-x-3 bottom-3 top-16 z-50 flex flex-col overflow-hidden rounded-xl border border-border/80 bg-[#fdfdfd] shadow-[0_20px_60px_-20px_rgba(120,70,30,0.35)] sm:inset-auto sm:bottom-6 sm:right-6 sm:top-auto sm:h-[min(720px,calc(100vh-3rem))] sm:w-[min(760px,calc(100vw-3rem))]"
                   aria-label="菜谱 Agent 对话"
                 >
                   <header className="flex shrink-0 items-center gap-3 border-b border-border/70 bg-white px-4 py-3.5">
@@ -212,7 +348,18 @@ export function RecipeAgent({
                       <p className="mt-0.5 text-[10px] text-muted-foreground">懂菜谱，也懂你的口味</p>
                     </div>
                     <button
-                      onClick={() => setOpen(false)}
+                      type="button"
+                      onClick={() => setHistoryOpen((current) => !current)}
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-white text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary sm:hidden"
+                      aria-label="查看对话历史"
+                    >
+                      <History className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setOpen(false);
+                        setHistoryOpen(false);
+                      }}
                       className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-white text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
                       aria-label="关闭"
                     >
@@ -220,6 +367,94 @@ export function RecipeAgent({
                     </button>
                   </header>
 
+                  <div className="relative flex min-h-0 flex-1">
+                    {historyOpen && (
+                      <button
+                        type="button"
+                        onClick={() => setHistoryOpen(false)}
+                        className="absolute inset-0 z-10 bg-neutral-900/15 sm:hidden"
+                        aria-label="关闭对话历史"
+                      />
+                    )}
+                    <aside
+                      className={cn(
+                        "absolute inset-y-0 left-0 z-20 flex w-[218px] flex-col border-r border-border/70 bg-[#faf7f2] transition-transform sm:static sm:z-auto sm:translate-x-0",
+                        historyOpen ? "translate-x-0" : "-translate-x-full"
+                      )}
+                    >
+                      <div className="border-b border-border/60 p-3">
+                        <button
+                          type="button"
+                          onClick={startNewConversation}
+                          disabled={loading}
+                          className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2.5 text-[11px] font-bold text-white shadow-sm shadow-primary/15 transition-colors hover:bg-primary/90 disabled:opacity-50"
+                        >
+                          <MessageSquarePlus className="h-4 w-4" />
+                          新建对话
+                        </button>
+                      </div>
+                      <div className="min-h-0 flex-1 overflow-y-auto p-2">
+                        <div className="mb-2 flex items-center justify-between px-2 pt-1">
+                          <span className="text-[8px] font-black uppercase tracking-[0.18em] text-muted-foreground">
+                            本菜谱历史
+                          </span>
+                          <span className="text-[9px] font-bold text-muted-foreground">
+                            {recipeConversations.length}
+                          </span>
+                        </div>
+                        <div className="space-y-1">
+                          {recipeConversations.map((conversation) => (
+                            <div
+                              key={conversation.id}
+                              className={cn(
+                                "group flex items-center gap-1 rounded-lg border transition-colors",
+                                activeConversationId === conversation.id
+                                  ? "border-primary/20 bg-white shadow-sm"
+                                  : "border-transparent hover:bg-white/80"
+                              )}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => openConversation(conversation)}
+                                disabled={loading}
+                                className="flex min-w-0 flex-1 items-start gap-2 px-2.5 py-2.5 text-left disabled:cursor-not-allowed"
+                              >
+                                <MessageSquare
+                                  className={cn(
+                                    "mt-0.5 h-3.5 w-3.5 shrink-0",
+                                    activeConversationId === conversation.id
+                                      ? "text-primary"
+                                      : "text-muted-foreground"
+                                  )}
+                                />
+                                <span className="min-w-0">
+                                  <span className="block truncate text-[11px] font-bold text-foreground">
+                                    {conversation.title}
+                                  </span>
+                                  <span className="mt-0.5 block text-[8px] text-muted-foreground">
+                                    {formatConversationTime(conversation.updatedAt)}
+                                  </span>
+                                </span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => deleteConversation(conversation.id)}
+                                disabled={loading}
+                                className="mr-1.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-100 transition-all hover:bg-red-50 hover:text-red-600 focus:opacity-100 disabled:hidden sm:opacity-0 sm:group-hover:opacity-100"
+                                aria-label={`删除对话：${conversation.title}`}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="border-t border-border/60 px-3 py-2.5 text-[8px] leading-relaxed text-muted-foreground">
+                        对话仅保存在当前浏览器
+                      </div>
+                    </aside>
+
+                    <div className="flex min-w-0 flex-1 flex-col">
                   <div className="flex shrink-0 items-center gap-2 border-b border-dashed border-border bg-orange-50/50 px-4 py-2">
                     <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                     <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">当前菜谱</span>
@@ -424,6 +659,8 @@ export function RecipeAgent({
                   )}
                 </button>
               </form>
+                    </div>
+                  </div>
                 </motion.section>
               </>
             )}

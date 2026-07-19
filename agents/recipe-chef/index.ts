@@ -183,7 +183,7 @@ export async function onRequest(context: AgentContext): Promise<Response> {
         stream: true,
         messages: [
           { role: "system", content: systemPrompt },
-          ...messages.slice(-10),
+          ...messages,
         ],
       }),
       signal: context.request.signal,

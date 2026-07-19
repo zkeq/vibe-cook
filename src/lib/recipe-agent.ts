@@ -25,20 +25,10 @@ function getAgentEndpoint(): string {
   return "/recipe-chef";
 }
 
-function getConversationId(recipeId: string): string {
-  const storageKey = `recipe-agent-conversation-${recipeId}`;
-  const existing = sessionStorage.getItem(storageKey);
-  if (existing) return existing;
-
-  const randomPart = crypto.randomUUID().replace(/-/g, "").slice(0, 31);
-  const conversationId = `cook_${randomPart}`;
-  sessionStorage.setItem(storageKey, conversationId);
-  return conversationId;
-}
-
 export async function askRecipeAgent(
   recipe: Recipe,
   messages: RecipeAgentChatMessage[],
+  conversationId: string,
   currentStepIndex?: number,
   onDelta?: (text: string) => void
 ): Promise<RecipeAgentResponse> {
@@ -46,11 +36,11 @@ export async function askRecipeAgent(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Makers-Conversation-Id": getConversationId(recipe.id),
+      "Makers-Conversation-Id": conversationId,
     },
     body: JSON.stringify({
       recipe,
-      messages: messages.slice(-10),
+      messages,
       currentStepIndex,
     }),
   });

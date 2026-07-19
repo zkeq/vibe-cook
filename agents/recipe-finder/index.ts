@@ -333,11 +333,7 @@ function extractRecommendations(
           : recipe.matchedIngredients.length > 0
             ? `匹配你已有的${recipe.matchedIngredients.join("、")}`
             : `难度 ${recipe.difficulty || 3}，约 ${recipe.duration_min || 30} 分钟完成`,
-      matchedIngredients: Array.isArray(item?.matchedIngredients)
-        ? item.matchedIngredients.filter(
-            (ingredient): ingredient is string => typeof ingredient === "string"
-          )
-        : recipe.matchedIngredients,
+      matchedIngredients: recipe.matchedIngredients,
     });
   };
 

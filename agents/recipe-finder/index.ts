@@ -70,6 +70,8 @@ export interface FinderRecommendation extends RecipeSummary {
 }
 
 const RECOMMENDATIONS_MARKER = "@@VIBE_COOK_RECOMMENDATIONS@@";
+const DSML_TOOL_CALLS_START = "<｜｜DSML｜｜tool_calls>";
+const DSML_TOOL_CALLS_END = "</｜｜DSML｜｜tool_calls>";
 
 const SEARCH_TOOL = {
   type: "function",
@@ -201,6 +203,53 @@ function parseToolArguments(value: string): RecipeSearchArgs {
   } catch {
     return { ingredients: [], limit: 6 };
   }
+}
+
+function parseDsmlToolCalls(content: string | null | undefined): ToolCall[] {
+  if (!content?.includes("DSML")) return [];
+
+  const calls: ToolCall[] = [];
+  const invokePattern =
+    /<｜｜DSML｜｜invoke\s+name="([^"]+)">([\s\S]*?)<\/｜｜DSML｜｜invoke>/g;
+  let invokeMatch: RegExpExecArray | null;
+
+  while ((invokeMatch = invokePattern.exec(content)) !== null) {
+    const args: Record<string, unknown> = {};
+    const parameterPattern =
+      /<｜｜DSML｜｜parameter\s+name="([^"]+)"(?:\s+string="[^"]+")?>([\s\S]*?)<\/｜｜DSML｜｜parameter>/g;
+    let parameterMatch: RegExpExecArray | null;
+
+    while ((parameterMatch = parameterPattern.exec(invokeMatch[2])) !== null) {
+      const name = parameterMatch[1];
+      const rawValue = parameterMatch[2].trim();
+      if (["maxDifficulty", "maxMinutes", "limit"].includes(name)) {
+        const numericValue = Number(rawValue);
+        if (Number.isFinite(numericValue)) args[name] = numericValue;
+      } else if (name === "ingredients") {
+        try {
+          const parsed = JSON.parse(rawValue) as unknown;
+          args[name] = Array.isArray(parsed)
+            ? parsed
+            : rawValue.split(/[,，、\s]+/).filter(Boolean);
+        } catch {
+          args[name] = rawValue.split(/[,，、\s]+/).filter(Boolean);
+        }
+      } else {
+        args[name] = rawValue;
+      }
+    }
+
+    calls.push({
+      id: `dsml_${crypto.randomUUID().replace(/-/g, "").slice(0, 24)}`,
+      type: "function",
+      function: {
+        name: invokeMatch[1],
+        arguments: JSON.stringify(args),
+      },
+    });
+  }
+
+  return calls;
 }
 
 async function searchRecipes(
@@ -432,14 +481,24 @@ export async function onRequest(context: AgentContext): Promise<Response> {
       }
 
       const assistantMessage = planningResult?.choices?.[0]?.message;
-      const toolCalls = assistantMessage?.tool_calls || [];
+      const nativeToolCalls = assistantMessage?.tool_calls || [];
+      const dsmlToolCalls =
+        nativeToolCalls.length === 0 ? parseDsmlToolCalls(assistantMessage?.content) : [];
+      const toolCalls = nativeToolCalls.length > 0 ? nativeToolCalls : dsmlToolCalls;
       if (toolCalls.length === 0) break;
 
-      planningMessages.push({
-        role: "assistant",
-        content: assistantMessage?.content || null,
-        tool_calls: toolCalls,
-      });
+      if (nativeToolCalls.length > 0) {
+        planningMessages.push({
+          role: "assistant",
+          content: assistantMessage?.content || null,
+          tool_calls: toolCalls,
+        });
+      } else {
+        planningMessages.push({
+          role: "assistant",
+          content: "我会先查询 Vibe Cook 菜谱库，再根据结果给出推荐。",
+        });
+      }
 
       for (const toolCall of toolCalls) {
         if (toolCall.function.name !== "search_recipes") continue;
@@ -447,26 +506,42 @@ export async function onRequest(context: AgentContext): Promise<Response> {
           const args = parseToolArguments(toolCall.function.arguments);
           const recipes = await searchRecipes(args, recipeApiBase, context.request.signal);
           recipes.forEach((recipe) => recipeCatalog.set(recipe.id, recipe));
-          planningMessages.push({
-            role: "tool",
-            tool_call_id: toolCall.id,
-            content: JSON.stringify({
-              count: recipes.length,
-              recipes: recipes.map((recipe) => ({
-                ...recipe,
-                cover_image: undefined,
-              })),
-            }),
+          const toolResult = JSON.stringify({
+            count: recipes.length,
+            recipes: recipes.map((recipe) => ({
+              ...recipe,
+              cover_image: undefined,
+            })),
           });
+          planningMessages.push(
+            nativeToolCalls.length > 0
+              ? {
+                  role: "tool",
+                  tool_call_id: toolCall.id,
+                  content: toolResult,
+                }
+              : {
+                  role: "system",
+                  content: `search_recipes 已执行，以下是可信的数据库结果：${toolResult}`,
+                }
+          );
         } catch (error) {
-          planningMessages.push({
-            role: "tool",
-            tool_call_id: toolCall.id,
-            content: JSON.stringify({
-              error: error instanceof Error ? error.message : "菜谱查询失败",
-              recipes: [],
-            }),
+          const toolError = JSON.stringify({
+            error: error instanceof Error ? error.message : "菜谱查询失败",
+            recipes: [],
           });
+          planningMessages.push(
+            nativeToolCalls.length > 0
+              ? {
+                  role: "tool",
+                  tool_call_id: toolCall.id,
+                  content: toolError,
+                }
+              : {
+                  role: "system",
+                  content: `search_recipes 执行失败：${toolError}`,
+                }
+          );
         }
       }
     }
@@ -474,7 +549,7 @@ export async function onRequest(context: AgentContext): Promise<Response> {
     planningMessages.push({
       role: "system",
       content:
-        "现在直接面向用户给出最终回复，并严格遵守 Markdown + 推荐标记 + JSON 数组的输出协议。只能使用工具结果中的 recipeId。",
+        "工具调用阶段已经结束。现在不要再调用工具，也绝对不要输出 DSML、tool_calls 或 invoke 标签；直接面向用户给出最终回复，并严格遵守 Markdown + 推荐标记 + JSON 数组的输出协议。只能使用已返回工具结果中的 recipeId。",
     });
 
     const modelResponse = await fetch(`${modelBase}/chat/completions`, {
@@ -511,6 +586,7 @@ export async function onRequest(context: AgentContext): Promise<Response> {
         let protocolBuffer = "";
         let recommendationsBuffer = "";
         let markerFound = false;
+        let filteringDsml = false;
 
         const emitAnswer = (text: string) => {
           if (text) controller.enqueue(streamEvent("delta", { text }));
@@ -521,20 +597,53 @@ export async function onRequest(context: AgentContext): Promise<Response> {
             return;
           }
           protocolBuffer += text;
-          const markerIndex = protocolBuffer.indexOf(RECOMMENDATIONS_MARKER);
-          if (markerIndex >= 0) {
-            emitAnswer(protocolBuffer.slice(0, markerIndex).trimEnd());
-            recommendationsBuffer += protocolBuffer.slice(
-              markerIndex + RECOMMENDATIONS_MARKER.length
+
+          while (protocolBuffer) {
+            if (filteringDsml) {
+              const dsmlEndIndex = protocolBuffer.indexOf(DSML_TOOL_CALLS_END);
+              if (dsmlEndIndex < 0) {
+                protocolBuffer = flush
+                  ? ""
+                  : protocolBuffer.slice(
+                      Math.max(0, protocolBuffer.length - DSML_TOOL_CALLS_END.length + 1)
+                    );
+                return;
+              }
+              protocolBuffer = protocolBuffer.slice(
+                dsmlEndIndex + DSML_TOOL_CALLS_END.length
+              );
+              filteringDsml = false;
+              continue;
+            }
+
+            const markerIndex = protocolBuffer.indexOf(RECOMMENDATIONS_MARKER);
+            const dsmlStartIndex = protocolBuffer.indexOf(DSML_TOOL_CALLS_START);
+            if (dsmlStartIndex >= 0 && (markerIndex < 0 || dsmlStartIndex < markerIndex)) {
+              emitAnswer(protocolBuffer.slice(0, dsmlStartIndex).trimEnd());
+              protocolBuffer = protocolBuffer.slice(
+                dsmlStartIndex + DSML_TOOL_CALLS_START.length
+              );
+              filteringDsml = true;
+              continue;
+            }
+            if (markerIndex >= 0) {
+              emitAnswer(protocolBuffer.slice(0, markerIndex).trimEnd());
+              recommendationsBuffer += protocolBuffer.slice(
+                markerIndex + RECOMMENDATIONS_MARKER.length
+              );
+              protocolBuffer = "";
+              markerFound = true;
+              return;
+            }
+
+            const protectedLength = Math.max(
+              RECOMMENDATIONS_MARKER.length,
+              DSML_TOOL_CALLS_START.length
             );
-            protocolBuffer = "";
-            markerFound = true;
-            return;
-          }
-          const safeLength = flush
-            ? protocolBuffer.length
-            : Math.max(0, protocolBuffer.length - RECOMMENDATIONS_MARKER.length + 1);
-          if (safeLength > 0) {
+            const safeLength = flush
+              ? protocolBuffer.length
+              : Math.max(0, protocolBuffer.length - protectedLength + 1);
+            if (safeLength <= 0) return;
             emitAnswer(protocolBuffer.slice(0, safeLength));
             protocolBuffer = protocolBuffer.slice(safeLength);
           }

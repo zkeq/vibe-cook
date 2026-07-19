@@ -247,10 +247,10 @@ export function RecipeFinderAgent() {
       <button
         type="button"
         onClick={handleOpen}
-        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className="flex items-center gap-1.5 rounded-lg border border-primary/15 bg-primary/[0.06] px-3 py-1.5 text-sm font-semibold text-primary transition-colors hover:border-primary/25 hover:bg-primary/10"
         aria-label="打开 AI 选菜助手"
       >
-        <Sparkles className="h-3.5 w-3.5" />
+        <ChefHat className="h-3.5 w-3.5" />
         <span>帮我选菜</span>
       </button>
 

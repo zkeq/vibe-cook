@@ -114,6 +114,7 @@ export function CookClient({ recipe }: CookClientProps) {
   const [selectedIngredient, setSelectedIngredient] = useState<string>("");
   const [targetAmount, setTargetAmount] = useState<string>("");
   const [isInitialized, setIsInitialized] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   // 计算缩放后的配料
   const scaledIngredients = recipe.ingredients.map((ing) => {
@@ -774,27 +775,54 @@ export function CookClient({ recipe }: CookClientProps) {
                               animate={{ height: "auto", opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
                               transition={{ duration: 0.2 }}
-                              className="overflow-hidden"
                             >
-                              <div className="rounded-xl border border-orange-100/70 bg-gradient-to-br from-orange-50/80 to-amber-50/50 p-3 space-y-2">
+                              <div className="rounded-xl border border-orange-100/70 bg-gradient-to-br from-orange-50/80 to-amber-50/50 p-3 space-y-2 relative">
                                 <p className="text-[9px] text-muted-foreground leading-relaxed">
                                   💡 选择配料输入目标用量
                                 </p>
-                                <div className="space-y-2">
+                                <div className="space-y-2 relative z-50">
+                                  {/* 自定义下拉选择器 */}
                                   <div className="relative">
-                                    <select
-                                      value={selectedIngredient}
-                                      onChange={(e) => handleIngredientChange(e.target.value)}
-                                      className="w-full h-8 rounded-lg border border-orange-200/60 bg-white px-2 pr-6 text-[10px] font-medium outline-none focus:border-primary focus:ring-1 focus:ring-primary/10 transition-all appearance-none cursor-pointer shadow-sm"
-                                      style={{ backgroundImage: 'none' }}
+                                    <button
+                                      onClick={() => setDropdownOpen(!dropdownOpen)}
+                                      className="w-full h-8 rounded-lg border border-orange-200/60 bg-white px-2 pr-6 text-[10px] font-medium outline-none focus:border-primary focus:ring-1 focus:ring-primary/10 transition-all shadow-sm text-left flex items-center justify-between"
                                     >
-                                      {recipe.ingredients.filter(ing => ing.per_serving).map((ing) => (
-                                        <option key={ing.name} value={ing.name}>
-                                          {ing.name}
-                                        </option>
-                                      ))}
-                                    </select>
-                                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
+                                      <span>{selectedIngredient}</span>
+                                      <ChevronDown className={cn(
+                                        "h-3 w-3 text-muted-foreground transition-transform",
+                                        dropdownOpen && "rotate-180"
+                                      )} />
+                                    </button>
+
+                                    <AnimatePresence>
+                                      {dropdownOpen && (
+                                        <motion.div
+                                          initial={{ opacity: 0, y: -10 }}
+                                          animate={{ opacity: 1, y: 0 }}
+                                          exit={{ opacity: 0, y: -10 }}
+                                          transition={{ duration: 0.15 }}
+                                          className="absolute z-50 mt-1 w-full rounded-lg border border-orange-200/60 bg-white shadow-lg overflow-hidden"
+                                        >
+                                          <div className="max-h-40 overflow-y-auto">
+                                            {recipe.ingredients.filter(ing => ing.per_serving).map((ing) => (
+                                              <button
+                                                key={ing.name}
+                                                onClick={() => {
+                                                  handleIngredientChange(ing.name);
+                                                  setDropdownOpen(false);
+                                                }}
+                                                className={cn(
+                                                  "w-full px-2 py-1.5 text-left text-[10px] font-medium transition-colors hover:bg-orange-50",
+                                                  selectedIngredient === ing.name && "bg-orange-50 text-primary"
+                                                )}
+                                              >
+                                                {ing.name}
+                                              </button>
+                                            ))}
+                                          </div>
+                                        </motion.div>
+                                      )}
+                                    </AnimatePresence>
                                   </div>
                                   <div className="flex gap-2">
                                     <input
@@ -1136,27 +1164,54 @@ export function CookClient({ recipe }: CookClientProps) {
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
                           transition={{ duration: 0.2 }}
-                          className="overflow-hidden"
                         >
-                          <div className="rounded-xl border border-white/50 bg-white/60 p-3 space-y-2">
+                          <div className="rounded-xl border border-white/50 bg-white/60 p-3 space-y-2 relative">
                             <p className="text-[9px] text-muted-foreground leading-relaxed">
                               💡 选择配料并输入目标用量
                             </p>
-                            <div className="space-y-2">
+                            <div className="space-y-2 relative z-50">
+                              {/* 自定义下拉选择器 */}
                               <div className="relative">
-                                <select
-                                  value={selectedIngredient}
-                                  onChange={(e) => handleIngredientChange(e.target.value)}
-                                  className="w-full h-9 rounded-lg border border-orange-200/60 bg-white px-3 pr-8 text-xs font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all appearance-none cursor-pointer shadow-sm"
-                                  style={{ backgroundImage: 'none' }}
+                                <button
+                                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                                  className="w-full h-9 rounded-lg border border-orange-200/60 bg-white px-3 pr-8 text-xs font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all shadow-sm text-left flex items-center justify-between"
                                 >
-                                  {recipe.ingredients.filter(ing => ing.per_serving).map((ing) => (
-                                    <option key={ing.name} value={ing.name}>
-                                      {ing.name}
-                                    </option>
-                                  ))}
-                                </select>
-                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                                  <span>{selectedIngredient}</span>
+                                  <ChevronDown className={cn(
+                                    "h-3.5 w-3.5 text-muted-foreground transition-transform",
+                                    dropdownOpen && "rotate-180"
+                                  )} />
+                                </button>
+
+                                <AnimatePresence>
+                                  {dropdownOpen && (
+                                    <motion.div
+                                      initial={{ opacity: 0, y: -10 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      exit={{ opacity: 0, y: -10 }}
+                                      transition={{ duration: 0.15 }}
+                                      className="absolute z-50 mt-1 w-full rounded-lg border border-orange-200/60 bg-white shadow-lg overflow-hidden"
+                                    >
+                                      <div className="max-h-48 overflow-y-auto">
+                                        {recipe.ingredients.filter(ing => ing.per_serving).map((ing) => (
+                                          <button
+                                            key={ing.name}
+                                            onClick={() => {
+                                              handleIngredientChange(ing.name);
+                                              setDropdownOpen(false);
+                                            }}
+                                            className={cn(
+                                              "w-full px-3 py-2 text-left text-xs font-medium transition-colors hover:bg-orange-50",
+                                              selectedIngredient === ing.name && "bg-orange-50 text-primary"
+                                            )}
+                                          >
+                                            {ing.name}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
                               </div>
                               <div className="flex gap-2">
                                 <input

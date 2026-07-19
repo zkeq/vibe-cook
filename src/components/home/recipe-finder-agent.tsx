@@ -55,7 +55,11 @@ function createConversation(): RecipeFinderConversation {
   };
 }
 
-export function RecipeFinderAgent() {
+interface RecipeFinderAgentProps {
+  compact?: boolean;
+}
+
+export function RecipeFinderAgent({ compact = false }: RecipeFinderAgentProps = {}) {
   const [open, setOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -247,11 +251,14 @@ export function RecipeFinderAgent() {
       <button
         type="button"
         onClick={handleOpen}
-        className="flex items-center gap-1.5 rounded-lg border border-primary/15 bg-primary/[0.06] px-3 py-1.5 text-sm font-semibold text-primary transition-colors hover:border-primary/25 hover:bg-primary/10"
+        className={cn(
+          "flex shrink-0 items-center gap-1.5 rounded-lg border border-primary/15 bg-primary/[0.06] font-semibold text-primary transition-colors hover:border-primary/25 hover:bg-primary/10",
+          compact ? "h-8 px-2.5 text-xs" : "px-3 py-1.5 text-sm"
+        )}
         aria-label="打开 AI 选菜助手"
       >
         <ChefHat className="h-3.5 w-3.5" />
-        <span>帮我选菜</span>
+        <span>{compact ? "AI 选菜" : "帮我选菜"}</span>
       </button>
 
       {typeof document !== "undefined" &&

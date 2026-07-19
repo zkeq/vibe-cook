@@ -181,6 +181,13 @@ export function Navbar({ onMenuClick, showMenuButton = false }: NavbarProps = {}
           })}
         </nav>
 
+        {/* 首页 AI 选菜 - 手机端右上角 */}
+        {pathname === "/" && (
+          <div className="shrink-0 lg:hidden">
+            <RecipeFinderAgent compact />
+          </div>
+        )}
+
         {/* 移动端菜单按钮 */}
         {showMenuButton && (
           <button

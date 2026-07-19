@@ -172,11 +172,11 @@ function parseToolArguments(value: string): RecipeSearchArgs {
           : undefined,
       limit:
         typeof parsed.limit === "number"
-          ? Math.min(8, Math.max(1, Math.round(parsed.limit)))
-          : 6,
+          ? Math.min(12, Math.max(1, Math.round(parsed.limit)))
+          : 8,
     };
   } catch {
-    return { ingredients: [], limit: 6 };
+    return { ingredients: [], limit: 8 };
   }
 }
 
@@ -277,7 +277,7 @@ async function searchRecipes(
   return ranked
     .filter((recipe) => ingredients.length === 0 || recipe.matchedIngredients.length > 0)
     .sort((a, b) => b.score - a.score)
-    .slice(0, args.limit || 6)
+    .slice(0, args.limit || 8)
     .map((recipe) => ({
       id: recipe.id,
       title: recipe.title,
@@ -300,40 +300,54 @@ function extractRecommendations(
   catalog: Map<string, RecipeToolResult>
 ): FinderRecommendation[] {
   const arrayMatch = value.match(/\[[\s\S]*\]/);
-  if (!arrayMatch) return [];
+  let parsed: RecommendationSpec[] = [];
 
-  try {
-    const parsed = JSON.parse(arrayMatch[0]) as RecommendationSpec[];
-    if (!Array.isArray(parsed)) return [];
-
-    const recommendations: FinderRecommendation[] = [];
-    parsed.forEach((item) => {
-      const recipe = catalog.get(item.recipeId);
-      if (recipe) {
-        recommendations.push({
-          id: recipe.id,
-          title: recipe.title,
-          summary: recipe.summary,
-          category: recipe.category,
-          cover_image: recipe.cover_image,
-          difficulty: recipe.difficulty,
-          calories: recipe.calories,
-          duration_min: recipe.duration_min,
-          tags: recipe.tags,
-          steps_count: recipe.steps_count,
-          reason: typeof item.reason === "string" ? item.reason.trim() : "符合你的条件",
-          matchedIngredients: Array.isArray(item.matchedIngredients)
-            ? item.matchedIngredients.filter(
-                (ingredient): ingredient is string => typeof ingredient === "string"
-              )
-            : recipe.matchedIngredients,
-        });
-      }
-    });
-    return recommendations.slice(0, 4);
-  } catch {
-    return [];
+  if (arrayMatch) {
+    try {
+      const candidate = JSON.parse(arrayMatch[0]) as RecommendationSpec[];
+      if (Array.isArray(candidate)) parsed = candidate;
+    } catch {
+      // The catalog fallback below still guarantees that every candidate is returned.
+    }
   }
+
+  const recommendations: FinderRecommendation[] = [];
+  const includedIds = new Set<string>();
+  const appendRecipe = (recipe: RecipeToolResult, item?: RecommendationSpec) => {
+    if (includedIds.has(recipe.id)) return;
+    includedIds.add(recipe.id);
+    recommendations.push({
+      id: recipe.id,
+      title: recipe.title,
+      summary: recipe.summary,
+      category: recipe.category,
+      cover_image: recipe.cover_image,
+      difficulty: recipe.difficulty,
+      calories: recipe.calories,
+      duration_min: recipe.duration_min,
+      tags: recipe.tags,
+      steps_count: recipe.steps_count,
+      reason:
+        typeof item?.reason === "string" && item.reason.trim()
+          ? item.reason.trim()
+          : recipe.matchedIngredients.length > 0
+            ? `匹配你已有的${recipe.matchedIngredients.join("、")}`
+            : `难度 ${recipe.difficulty || 3}，约 ${recipe.duration_min || 30} 分钟完成`,
+      matchedIngredients: Array.isArray(item?.matchedIngredients)
+        ? item.matchedIngredients.filter(
+            (ingredient): ingredient is string => typeof ingredient === "string"
+          )
+        : recipe.matchedIngredients,
+    });
+  };
+
+  parsed.forEach((item) => {
+    const recipe = catalog.get(item.recipeId);
+    if (recipe) appendRecipe(recipe, item);
+  });
+  catalog.forEach((recipe) => appendRecipe(recipe));
+
+  return recommendations;
 }
 
 export async function onRequest(context: AgentContext): Promise<Response> {
@@ -379,7 +393,7 @@ export async function onRequest(context: AgentContext): Promise<Response> {
   const plannerPrompt = `你是 Vibe Cook 的菜谱检索规划器。你只负责把完整对话转换成一次检索计划，不回答用户，不调用任何工具，不输出 DSML 或 XML。
 
 只输出一个合法 JSON 对象，不使用 Markdown：
-{"action":"search","query":"","ingredients":[],"category":"","maxDifficulty":3,"maxMinutes":60,"limit":6,"question":""}
+{"action":"search","query":"","ingredients":[],"category":"","maxDifficulty":3,"maxMinutes":60,"limit":8,"question":""}
 
 规则：
 - 用户明确要求推荐时应使用 search，不要因为缺少食材而反复追问。例如“我是新手，推荐几道菜”已经足够检索。
@@ -387,12 +401,13 @@ export async function onRequest(context: AgentContext): Promise<Response> {
 - ingredients 只放用户明确拥有或想用的主要食材，每项一个名称。
 - query 只放明确的菜名、口味或场景关键词；不要把“新手”“家常”“好做”放进 query，这些由难度筛选处理。
 - maxMinutes 仅在用户明确提出时间限制时填写，否则省略。
+- limit 固定填写 8；如果实际匹配不足 8 条，就返回所有匹配项。
 - 只有用户既没有要求推荐、也没有提供任何可执行方向时才用 clarify，并在 question 中只追问一个问题。`;
 
   const finalPrompt = `你是 Vibe Cook 首页的选菜主厨。服务端已经替你完成了菜谱检索，你不能调用工具，也绝对不能输出 DSML、tool_calls、invoke 标签或内部参数。
 
 工作规则：
-- 如果收到“菜谱数据库候选”，从中推荐 2–4 道最合适的菜，只能使用候选中的 recipeId。
+- 如果收到“菜谱数据库候选”，正文可以重点比较最合适的 3–4 道，但末尾 JSON 必须包含全部候选，每个候选恰好一次，只能使用候选中的 recipeId。
 - 优先选择用户已有食材覆盖率高、难度低、耗时短的菜，并说明各自区别。
 - 如果收到“需要继续追问”，自然地只问一个最关键的问题。
 - 不要声称数据库连接失败；真正的查询错误会由服务端直接处理。
@@ -438,7 +453,7 @@ export async function onRequest(context: AgentContext): Promise<Response> {
       action: "search" as const,
       ingredients: [],
       maxDifficulty: /新手|不会做|零基础/.test(conversationText) ? 2 : 3,
-      limit: 6,
+      limit: 8,
     };
     const finalMessages: ModelMessage[] = [
       { role: "system", content: finalPrompt },

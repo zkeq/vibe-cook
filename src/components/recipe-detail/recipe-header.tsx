@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import Image from "next/image";
-import { Star, Minus, Plus, Play, ChefHat, Check } from "lucide-react";
+import { Star, Minus, Plus, Play, ChefHat, Check, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import type { Recipe } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -24,9 +24,77 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
   const servings = globalServings[recipe.id] || recipe.servings.base;
   const setServings = (value: number) => setGlobalServings(recipe.id, value);
 
+  // 反算模式状态
+  const [reverseCalcMode, setReverseCalcMode] = useState(false);
+  const [selectedIngredient, setSelectedIngredient] = useState<string>("");
+  const [targetAmount, setTargetAmount] = useState<string>("");
+  const [isInitialized, setIsInitialized] = useState(false);
+
   // 使用全局状态管理采购清单勾选
   const { getShoppingList } = useUserSettingsStore();
   const [checkedIngredients, setCheckedIngredients] = useState<Set<string>>(new Set());
+
+  // 计算缩放后的食材
+  const scaledIngredients = recipe.ingredients.map((ing) => {
+    if (!ing.per_serving) return { ...ing, scaledValue: ing.amount, unit: "" };
+    const match = ing.amount.match(/^([\d.]+)/);
+    if (!match) return { ...ing, scaledValue: ing.amount, unit: "" };
+    const baseAmount = parseFloat(match[1]);
+    const scaledAmount = (baseAmount * servings) / recipe.servings.base;
+    const rest = ing.amount.replace(/^[\d.]+/, "");
+    return {
+      ...ing,
+      scaledValue: scaledAmount.toFixed(2).replace(/\.?0+$/, ""),
+      unit: rest
+    };
+  });
+
+  // 仅在切换配料时更新目标用量，输入过程中不更新
+  useEffect(() => {
+    if (!reverseCalcMode) {
+      setIsInitialized(false);
+      return;
+    }
+    if (!selectedIngredient) return;
+
+    // 只在初始化或切换配料时更新
+    if (!isInitialized) {
+      const scaledIng = scaledIngredients.find(ing => ing.name === selectedIngredient);
+      if (scaledIng && scaledIng.per_serving) {
+        setTargetAmount(scaledIng.scaledValue);
+        setIsInitialized(true);
+      }
+    }
+  }, [selectedIngredient, reverseCalcMode]);
+
+  // 当配料选择改变时，重置初始化状态
+  const handleIngredientChange = (name: string) => {
+    setSelectedIngredient(name);
+    setIsInitialized(false);
+  };
+
+  // 实时计算份数（输入框变化时触发）
+  const handleTargetAmountChange = (value: string) => {
+    setTargetAmount(value);
+
+    // 实时反算份数
+    if (!value || !selectedIngredient) return;
+
+    const ingredient = recipe.ingredients.find(ing => ing.name === selectedIngredient);
+    if (!ingredient || !ingredient.per_serving) return;
+
+    const match = ingredient.amount.match(/^([\d.]+)/);
+    if (!match) return;
+
+    const baseAmount = parseFloat(match[1]);
+    const targetNum = parseFloat(value);
+
+    if (isNaN(targetNum) || targetNum <= 0) return;
+
+    // 计算新的份数：目标用量 / (基准用量 / 基准份数)
+    const newServings = (targetNum * recipe.servings.base) / baseAmount;
+    setServings(Math.max(0.1, parseFloat(newServings.toFixed(2))));
+  };
 
   // 加载勾选状态
   useEffect(() => {
@@ -70,20 +138,12 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
     };
   }, []);
 
-  // 计算缩放后的食材
-  const scaledIngredients = recipe.ingredients.map((ing) => {
-    if (!ing.per_serving) return { ...ing, scaledValue: ing.amount, unit: "" };
-    const match = ing.amount.match(/^([\d.]+)/);
-    if (!match) return { ...ing, scaledValue: ing.amount, unit: "" };
-    const baseAmount = parseFloat(match[1]);
-    const scaledAmount = (baseAmount * servings) / recipe.servings.base;
-    const rest = ing.amount.replace(/^[\d.]+/, "");
-    return {
-      ...ing,
-      scaledValue: scaledAmount.toFixed(1).replace(/\.0$/, ""),
-      unit: rest
-    };
-  });
+  // 处理反算逻辑
+  const handleReverseCalc = () => {
+    // 退出反算模式（收起面板）
+    setReverseCalcMode(false);
+    setTargetAmount("");
+  };
 
   return (
     <div ref={containerRef} className="mb-6 rounded-xl bg-white p-3 sm:p-4 shadow-sm">
@@ -320,7 +380,76 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
         <div className="mb-2 flex items-center gap-2">
           <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">份数调整</span>
           <div className="h-px flex-1 border-t border-dashed border-border" />
+          <button
+            onClick={() => {
+              setReverseCalcMode(!reverseCalcMode);
+              if (!reverseCalcMode && recipe.ingredients.find(ing => ing.per_serving)) {
+                setSelectedIngredient(recipe.ingredients.find(ing => ing.per_serving)!.name);
+              }
+            }}
+            className={cn(
+              "text-[10px] font-bold border-b border-dashed transition-colors",
+              reverseCalcMode
+                ? "text-primary border-primary"
+                : "text-muted-foreground border-muted-foreground/50 hover:text-foreground hover:border-foreground"
+            )}
+          >
+            {reverseCalcMode ? "取消反算" : "按配料反算"}
+          </button>
         </div>
+
+        {/* 反算模式 */}
+        <AnimatePresence>
+          {reverseCalcMode && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="mb-3 overflow-hidden"
+            >
+              <div className="rounded-xl border border-orange-100/70 bg-gradient-to-br from-orange-50/80 to-amber-50/50 p-4 space-y-3">
+                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                  💡 选择配料并输入目标用量，自动反算其他配料
+                </p>
+
+                {/* 单行布局：配料选择 + 用量输入 + 计算按钮 */}
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <select
+                      value={selectedIngredient}
+                      onChange={(e) => handleIngredientChange(e.target.value)}
+                      className="w-full h-10 rounded-lg border border-orange-200/60 bg-white px-3 pr-8 text-xs font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all appearance-none cursor-pointer shadow-sm"
+                      style={{ backgroundImage: 'none' }}
+                    >
+                      {recipe.ingredients.filter(ing => ing.per_serving).map((ing) => (
+                        <option key={ing.name} value={ing.name}>
+                          {ing.name}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                  </div>
+
+                  <input
+                    type="number"
+                    value={targetAmount}
+                    onChange={(e) => handleTargetAmountChange(e.target.value)}
+                    placeholder="目标用量"
+                    className="flex-1 h-10 rounded-lg border border-orange-200/60 bg-white px-3 text-xs font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all shadow-sm"
+                  />
+
+                  <button
+                    onClick={handleReverseCalc}
+                    className="h-10 px-4 rounded-lg text-xs font-bold transition-all shadow-sm whitespace-nowrap bg-primary text-white hover:bg-primary/90 active:scale-95"
+                  >
+                    完成
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* 份数选择器 */}
         <div className="mb-3 flex items-center justify-center gap-2">
@@ -330,7 +459,7 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
           >
             <Minus className="h-3.5 w-3.5" />
           </button>
-          <div className="relative h-10 w-12 overflow-hidden rounded-lg border-2 border-primary/20 bg-primary/5">
+          <div className="relative h-10 overflow-hidden rounded-lg border-2 border-primary/20 bg-primary/5">
             <AnimatePresence mode="popLayout">
               <motion.div
                 key={servings}
@@ -338,7 +467,7 @@ export function RecipeHeader({ recipe }: RecipeHeaderProps) {
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: -20, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                className="absolute inset-0 flex items-center justify-center text-2xl font-bold tabular-nums text-primary"
+                className="flex h-full items-center justify-center px-3 text-2xl font-bold tabular-nums text-primary"
               >
                 {servings}
               </motion.div>

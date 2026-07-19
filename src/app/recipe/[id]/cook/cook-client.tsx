@@ -105,8 +105,15 @@ export function CookClient({ recipe }: CookClientProps) {
   const stepImageContainerRef = useRef<HTMLDivElement>(null);
 
   // 使用全局状态管理份数（与详情页同步）
-  const { servings: globalServings } = useUserSettingsStore();
+  const { servings: globalServings, setServings: setGlobalServings } = useUserSettingsStore();
   const servings = globalServings[recipe.id] || recipe.servings.base;
+  const setServings = (value: number) => setGlobalServings(recipe.id, value);
+
+  // 反算模式状态
+  const [reverseCalcMode, setReverseCalcMode] = useState(false);
+  const [selectedIngredient, setSelectedIngredient] = useState<string>("");
+  const [targetAmount, setTargetAmount] = useState<string>("");
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // 计算缩放后的配料
   const scaledIngredients = recipe.ingredients.map((ing) => {
@@ -116,8 +123,65 @@ export function CookClient({ recipe }: CookClientProps) {
     const baseAmount = parseFloat(match[1]);
     const scaledAmount = (baseAmount * servings) / recipe.servings.base;
     const rest = ing.amount.replace(/^[\d.]+/, "");
-    return { ...ing, amount: `${scaledAmount.toFixed(1).replace(/\.0$/, "")}${rest}` };
+    return { ...ing, amount: `${scaledAmount.toFixed(2).replace(/\.?0+$/, "")}${rest}` };
   });
+
+  // 仅在切换配料时更新目标用量，输入过程中不更新
+  useEffect(() => {
+    if (!reverseCalcMode) {
+      setIsInitialized(false);
+      return;
+    }
+    if (!selectedIngredient) return;
+
+    // 只在初始化或切换配料时更新
+    if (!isInitialized) {
+      const scaledIng = scaledIngredients.find(ing => ing.name === selectedIngredient);
+      if (scaledIng && scaledIng.per_serving) {
+        const match = scaledIng.amount.match(/^([\d.]+)/);
+        if (match) {
+          setTargetAmount(match[1]);
+          setIsInitialized(true);
+        }
+      }
+    }
+  }, [selectedIngredient, reverseCalcMode]);
+
+  // 当配料选择改变时，重置初始化状态
+  const handleIngredientChange = (name: string) => {
+    setSelectedIngredient(name);
+    setIsInitialized(false);
+  };
+
+  // 实时计算份数（输入框变化时触发）
+  const handleTargetAmountChange = (value: string) => {
+    setTargetAmount(value);
+
+    // 实时反算份数
+    if (!value || !selectedIngredient) return;
+
+    const ingredient = recipe.ingredients.find(ing => ing.name === selectedIngredient);
+    if (!ingredient || !ingredient.per_serving) return;
+
+    const match = ingredient.amount.match(/^([\d.]+)/);
+    if (!match) return;
+
+    const baseAmount = parseFloat(match[1]);
+    const targetNum = parseFloat(value);
+
+    if (isNaN(targetNum) || targetNum <= 0) return;
+
+    // 计算新的份数：目标用量 / (基准用量 / 基准份数)
+    const newServings = (targetNum * recipe.servings.base) / baseAmount;
+    setServings(Math.max(0.1, parseFloat(newServings.toFixed(2))));
+  };
+
+  // 处理反算逻辑
+  const handleReverseCalc = () => {
+    // 退出反算模式（收起面板）
+    setReverseCalcMode(false);
+    setTargetAmount("");
+  };
 
   // 渲染配料用量，数字部分橙色高亮
   const renderIngredientAmount = (amount: string) => {
@@ -661,12 +725,97 @@ export function CookClient({ recipe }: CookClientProps) {
                         transition={{ duration: 0.2 }}
                         className="space-y-3"
                       >
-                        {/* 份量说明 */}
-                        <div className="rounded-xl border border-border/60 bg-neutral-50/50 p-3 text-center">
-                          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                            基于 <span className="text-primary font-black text-sm mx-1">{servings}</span> 人份
-                          </span>
+                        {/* 份量说明 + 反算按钮 */}
+                        <div className="rounded-xl border border-border/60 bg-neutral-50/50 p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                              当前份数
+                            </span>
+                            <button
+                              onClick={() => {
+                                setReverseCalcMode(!reverseCalcMode);
+                                if (!reverseCalcMode && recipe.ingredients.find(ing => ing.per_serving)) {
+                                  const firstIng = recipe.ingredients.find(ing => ing.per_serving)!;
+                                  setSelectedIngredient(firstIng.name);
+                                }
+                              }}
+                              className={cn(
+                                "text-[9px] font-bold border-b border-dashed transition-colors",
+                                reverseCalcMode
+                                  ? "text-primary border-primary"
+                                  : "text-muted-foreground border-muted-foreground/50 hover:text-foreground hover:border-foreground"
+                              )}
+                            >
+                              {reverseCalcMode ? "取消" : "按配料反算"}
+                            </button>
+                          </div>
+                          <div className="relative h-10 overflow-hidden flex items-center justify-center">
+                            <AnimatePresence mode="popLayout">
+                              <motion.div
+                                key={servings}
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                exit={{ y: -20, opacity: 0 }}
+                                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                className="absolute inset-0 flex items-center justify-center"
+                              >
+                                <span className="text-primary font-black text-2xl tabular-nums">{servings}</span>
+                                <span className="text-muted-foreground text-xs ml-1">人份</span>
+                              </motion.div>
+                            </AnimatePresence>
+                          </div>
                         </div>
+
+                        {/* 反算面板 */}
+                        <AnimatePresence>
+                          {reverseCalcMode && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="rounded-xl border border-orange-100/70 bg-gradient-to-br from-orange-50/80 to-amber-50/50 p-3 space-y-2">
+                                <p className="text-[9px] text-muted-foreground leading-relaxed">
+                                  💡 选择配料输入目标用量
+                                </p>
+                                <div className="space-y-2">
+                                  <div className="relative">
+                                    <select
+                                      value={selectedIngredient}
+                                      onChange={(e) => handleIngredientChange(e.target.value)}
+                                      className="w-full h-8 rounded-lg border border-orange-200/60 bg-white px-2 pr-6 text-[10px] font-medium outline-none focus:border-primary focus:ring-1 focus:ring-primary/10 transition-all appearance-none cursor-pointer shadow-sm"
+                                      style={{ backgroundImage: 'none' }}
+                                    >
+                                      {recipe.ingredients.filter(ing => ing.per_serving).map((ing) => (
+                                        <option key={ing.name} value={ing.name}>
+                                          {ing.name}
+                                        </option>
+                                      ))}
+                                    </select>
+                                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground pointer-events-none" />
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <input
+                                      type="number"
+                                      value={targetAmount}
+                                      onChange={(e) => handleTargetAmountChange(e.target.value)}
+                                      placeholder="目标用量"
+                                      className="flex-1 h-8 rounded-lg border border-orange-200/60 bg-white px-2 text-[10px] font-medium outline-none focus:border-primary focus:ring-1 focus:ring-primary/10 transition-all shadow-sm"
+                                    />
+                                    <button
+                                      onClick={handleReverseCalc}
+                                      className="h-8 px-3 rounded-lg text-[10px] font-bold transition-all shadow-sm bg-primary text-white hover:bg-primary/90 active:scale-95"
+                                    >
+                                      完成
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
 
                         {/* 配料列表 */}
                         {scaledIngredients.map((ingredient, i) => (
@@ -956,41 +1105,116 @@ export function CookClient({ recipe }: CookClientProps) {
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="space-y-2 overflow-hidden max-h-64 overflow-y-auto"
+                    className="space-y-3 overflow-hidden"
                   >
-                    {scaledIngredients.map((ingredient, i) => (
-                      <div
-                        key={i}
+                    {/* 反算按钮 */}
+                    <div className="flex justify-end">
+                      <button
+                        onClick={() => {
+                          setReverseCalcMode(!reverseCalcMode);
+                          if (!reverseCalcMode && recipe.ingredients.find(ing => ing.per_serving)) {
+                            const firstIng = recipe.ingredients.find(ing => ing.per_serving)!;
+                            setSelectedIngredient(firstIng.name);
+                          }
+                        }}
                         className={cn(
-                          "rounded-lg border p-2.5 transition-colors",
-                          ingredient.optional
-                            ? "bg-white/50 border-orange-200/30"
-                            : "bg-white border-orange-200/50"
+                          "text-[10px] font-bold border-b border-dashed transition-colors",
+                          reverseCalcMode
+                            ? "text-primary border-primary"
+                            : "text-muted-foreground border-muted-foreground/50"
                         )}
                       >
-                        <div className="flex items-baseline justify-between gap-2">
-                          <span className={cn(
-                            "text-xs font-bold",
-                            ingredient.optional ? "text-muted-foreground" : "text-foreground"
-                          )}>
-                            {ingredient.name}
-                            {ingredient.optional && (
-                              <span className="ml-1.5 text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider">
-                                可选
-                              </span>
-                            )}
-                          </span>
-                          <span className="text-xs font-black tabular-nums">
-                            {renderIngredientAmount(ingredient.amount)}
-                          </span>
+                        {reverseCalcMode ? "取消反算" : "按配料反算"}
+                      </button>
+                    </div>
+
+                    {/* 反算面板 */}
+                    <AnimatePresence>
+                      {reverseCalcMode && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="rounded-xl border border-white/50 bg-white/60 p-3 space-y-2">
+                            <p className="text-[9px] text-muted-foreground leading-relaxed">
+                              💡 选择配料并输入目标用量
+                            </p>
+                            <div className="space-y-2">
+                              <div className="relative">
+                                <select
+                                  value={selectedIngredient}
+                                  onChange={(e) => handleIngredientChange(e.target.value)}
+                                  className="w-full h-9 rounded-lg border border-orange-200/60 bg-white px-3 pr-8 text-xs font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all appearance-none cursor-pointer shadow-sm"
+                                  style={{ backgroundImage: 'none' }}
+                                >
+                                  {recipe.ingredients.filter(ing => ing.per_serving).map((ing) => (
+                                    <option key={ing.name} value={ing.name}>
+                                      {ing.name}
+                                    </option>
+                                  ))}
+                                </select>
+                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                              </div>
+                              <div className="flex gap-2">
+                                <input
+                                  type="number"
+                                  value={targetAmount}
+                                  onChange={(e) => handleTargetAmountChange(e.target.value)}
+                                  placeholder="目标用量"
+                                  className="flex-1 h-9 rounded-lg border border-orange-200/60 bg-white px-3 text-xs font-medium outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all shadow-sm"
+                                />
+                                <button
+                                  onClick={handleReverseCalc}
+                                  className="h-9 px-4 rounded-lg text-xs font-bold transition-all shadow-sm whitespace-nowrap bg-primary text-white active:scale-95"
+                                >
+                                  完成
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* 配料列表 */}
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {scaledIngredients.map((ingredient, i) => (
+                        <div
+                          key={i}
+                          className={cn(
+                            "rounded-lg border p-2.5 transition-colors",
+                            ingredient.optional
+                              ? "bg-white/50 border-orange-200/30"
+                              : "bg-white border-orange-200/50"
+                          )}
+                        >
+                          <div className="flex items-baseline justify-between gap-2">
+                            <span className={cn(
+                              "text-xs font-bold",
+                              ingredient.optional ? "text-muted-foreground" : "text-foreground"
+                            )}>
+                              {ingredient.name}
+                              {ingredient.optional && (
+                                <span className="ml-1.5 text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider">
+                                  可选
+                                </span>
+                              )}
+                            </span>
+                            <span className="text-xs font-black tabular-nums">
+                              {renderIngredientAmount(ingredient.amount)}
+                            </span>
+                          </div>
+                          {ingredient.buying_tip && (
+                            <p className="text-[10px] text-muted-foreground/80 leading-relaxed mt-1">
+                              💡 {ingredient.buying_tip}
+                            </p>
+                          )}
                         </div>
-                        {ingredient.buying_tip && (
-                          <p className="text-[10px] text-muted-foreground/80 leading-relaxed mt-1">
-                            💡 {ingredient.buying_tip}
-                          </p>
-                        )}
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>

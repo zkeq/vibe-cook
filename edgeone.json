@@ -1,0 +1,6 @@
+{
+  "agents": {
+    "dir": "agents",
+    "timeout": 120
+  }
+}

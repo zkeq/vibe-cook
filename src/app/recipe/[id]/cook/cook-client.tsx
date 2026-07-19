@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, X, Clock, ChefHat, Play, Pause, RotateCcw, Volume2, VolumeX, Settings, ShoppingBasket, Minus, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, X, Clock, ChefHat, Play, Pause, RotateCcw, Volume2, VolumeX, Settings, ShoppingBasket, Minus, Plus, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import type { Recipe } from "@/lib/types";
@@ -12,6 +12,7 @@ import { Fancybox as NativeFancybox } from "@fancyapps/ui";
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
 import { TtsSettingsPanel, loadTtsSettings, type TtsSettings } from "@/components/cook/tts-settings-panel";
 import { useUserSettingsStore } from "@/store/user-settings-store";
+import { RecipeAgent } from "@/components/recipe-agent";
 
 const renderHighlightedTitle = (title: string) => {
   const verbs = ["洗净", "合炒", "调味出锅", "切块", "打鸡蛋", "煎鸡蛋", "盛出", "炒", "切", "打", "煎", "煮", "蒸", "炖", "拌", "去皮", "腌制", "滑炒", "爆香", "勾芡", "备菜"];
@@ -105,7 +106,11 @@ export function CookClient({ recipe }: CookClientProps) {
   const stepImageContainerRef = useRef<HTMLDivElement>(null);
 
   // 使用全局状态管理份数（与详情页同步）
-  const { servings: globalServings, setServings: setGlobalServings } = useUserSettingsStore();
+  const {
+    servings: globalServings,
+    setServings: setGlobalServings,
+    recipeTipAdditions,
+  } = useUserSettingsStore();
   const servings = globalServings[recipe.id] || recipe.servings.base;
   const setServings = (value: number) => setGlobalServings(recipe.id, value);
 
@@ -340,6 +345,8 @@ export function CookClient({ recipe }: CookClientProps) {
   };
 
   const currentStepData = recipe.steps[currentStep];
+  const currentAgentTips = recipeTipAdditions[recipe.id]?.[currentStep] || [];
+  const currentStepTips = [...(currentStepData.tips || []), ...currentAgentTips];
   const totalDuration = recipe.steps.reduce((sum, step) => sum + (step.duration_sec || 0), 0);
   const remainingTime = totalDuration - elapsedTime;
 
@@ -550,6 +557,13 @@ export function CookClient({ recipe }: CookClientProps) {
                 </button>
               </div>
 
+              {/* 菜谱 Agent */}
+              <RecipeAgent
+                recipe={recipe}
+                currentStepIndex={currentStep}
+                triggerVariant="cook-desktop"
+              />
+
               {/* 退出按钮 */}
               <Link
                 href={`/recipe/${recipe.id}`}
@@ -689,15 +703,22 @@ export function CookClient({ recipe }: CookClientProps) {
                             </div>
 
                             {/* 小贴士清单 */}
-                            {currentStepData.tips && currentStepData.tips.length > 0 && (
+                            {currentStepTips.length > 0 && (
                               <div className="space-y-2 mt-4 pt-4 border-t border-border/50">
                                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-2">
                                   💡 步骤提示 / Tips
                                 </span>
-                                {currentStepData.tips.map((tip, i) => (
+                                {currentStepTips.map((tip, i) => (
                                   <div key={i} className="flex gap-2 text-xs leading-relaxed text-muted-foreground font-medium">
-                                    <span className="text-primary shrink-0 font-bold">•</span>
+                                    {i >= (currentStepData.tips?.length || 0) ? (
+                                      <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
+                                    ) : (
+                                      <span className="text-primary shrink-0 font-bold">•</span>
+                                    )}
                                     <span>{tip}</span>
+                                    {i >= (currentStepData.tips?.length || 0) && (
+                                      <span className="h-fit shrink-0 rounded bg-primary/10 px-1 py-0.5 text-[8px] font-black text-primary">AI</span>
+                                    )}
                                   </div>
                                 ))}
                               </div>
@@ -956,6 +977,11 @@ export function CookClient({ recipe }: CookClientProps) {
               
               {/* 进度数值 + TTS 开关 */}
               <div className="flex items-center gap-2">
+                <RecipeAgent
+                  recipe={recipe}
+                  currentStepIndex={currentStep}
+                  triggerVariant="cook-mobile"
+                />
                 <button
                   onClick={() => setTtsEnabled(!ttsEnabled)}
                   className={cn(
@@ -1277,7 +1303,7 @@ export function CookClient({ recipe }: CookClientProps) {
 
             {/* 2.4 注意事项与 Tips 卡片 */}
             <AnimatePresence mode="wait">
-              {((currentStepData.tips && currentStepData.tips.length > 0) || currentStepData.produces) && (
+              {(currentStepTips.length > 0 || currentStepData.produces) && (
                 <motion.div
                   key={currentStep}
                   initial={{ opacity: 0, y: 8 }}
@@ -1292,12 +1318,19 @@ export function CookClient({ recipe }: CookClientProps) {
                     </span>
                   </div>
 
-                  {currentStepData.tips && currentStepData.tips.length > 0 && (
+                  {currentStepTips.length > 0 && (
                     <div className="space-y-2">
-                      {currentStepData.tips.map((tip, i) => (
+                      {currentStepTips.map((tip, i) => (
                         <div key={i} className="flex gap-2 text-xs leading-relaxed text-amber-900/80 font-medium">
-                          <span className="text-primary shrink-0 font-bold">•</span>
+                          {i >= (currentStepData.tips?.length || 0) ? (
+                            <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
+                          ) : (
+                            <span className="text-primary shrink-0 font-bold">•</span>
+                          )}
                           <span>{tip}</span>
+                          {i >= (currentStepData.tips?.length || 0) && (
+                            <span className="h-fit shrink-0 rounded bg-primary/10 px-1 py-0.5 text-[8px] font-black text-primary">AI</span>
+                          )}
                         </div>
                       ))}
                     </div>

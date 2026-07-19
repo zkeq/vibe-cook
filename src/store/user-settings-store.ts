@@ -12,6 +12,10 @@ interface UserSettingsState {
   clearShoppingList: (recipeId: string) => void;
   getShoppingList: (recipeId: string) => Set<string>;
 
+  // Agent 为每个菜谱步骤添加的个性化提示（recipeId -> stepIndex -> tips）
+  recipeTipAdditions: Record<string, Record<number, string[]>>;
+  addRecipeTips: (recipeId: string, stepIndex: number, tips: string[]) => void;
+
   // 用户偏好设置
   preferences: {
     theme?: 'light' | 'dark';
@@ -28,6 +32,7 @@ export const useUserSettingsStore = create<UserSettingsState>()(
     (set, get) => ({
       servings: {},
       shoppingLists: {},
+      recipeTipAdditions: {},
       preferences: {},
 
       setServings: (recipeId, servings) =>
@@ -56,6 +61,20 @@ export const useUserSettingsStore = create<UserSettingsState>()(
         const list = get().shoppingLists[recipeId] || [];
         return new Set(list);
       },
+
+      addRecipeTips: (recipeId, stepIndex, tips) =>
+        set((state) => {
+          const recipeTips = state.recipeTipAdditions[recipeId] || {};
+          const stepTips = recipeTips[stepIndex] || [];
+          const uniqueTips = [...new Set([...stepTips, ...tips.map((tip) => tip.trim()).filter(Boolean)])];
+
+          return {
+            recipeTipAdditions: {
+              ...state.recipeTipAdditions,
+              [recipeId]: { ...recipeTips, [stepIndex]: uniqueTips },
+            },
+          };
+        }),
 
       setPreference: (key, value) =>
         set((state) => ({

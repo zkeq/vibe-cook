@@ -2,21 +2,27 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ChefHat, Clock } from "lucide-react";
+import { ChefHat, Clock, Sparkles } from "lucide-react";
 import type { Recipe } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Fancybox as NativeFancybox } from "@fancyapps/ui";
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
+import { useUserSettingsStore } from "@/store/user-settings-store";
 
 interface RecipeStepsProps {
   recipe: Recipe;
 }
+
+const EMPTY_AGENT_TIPS: Readonly<Record<number, string[]>> = Object.freeze({});
 
 export function RecipeSteps({ recipe }: RecipeStepsProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
   const stepsContainerRef = useRef<HTMLDivElement>(null);
   const imageContainerRef = useRef<HTMLDivElement>(null);
+  const agentTips = useUserSettingsStore(
+    (state) => state.recipeTipAdditions[recipe.id] ?? EMPTY_AGENT_TIPS
+  );
 
   useEffect(() => {
     const container = imageContainerRef.current;
@@ -147,10 +153,17 @@ export function RecipeSteps({ recipe }: RecipeStepsProps) {
                   产出: {step.produces}
                 </div>
               )}
-              {step.tips && step.tips.length > 0 && (
+              {((step.tips && step.tips.length > 0) || (agentTips[i]?.length ?? 0) > 0) && (
                 <div className="mt-2 space-y-0.5">
-                  {step.tips.map((tip, j) => (
+                  {(step.tips || []).map((tip, j) => (
                     <div key={j} className="text-xs text-primary">💡 {tip}</div>
+                  ))}
+                  {(agentTips[i] || []).map((tip) => (
+                    <div key={tip} className="flex items-start gap-1.5 text-xs text-primary">
+                      <Sparkles className="mt-0.5 h-3 w-3 shrink-0" />
+                      <span>{tip}</span>
+                      <span className="shrink-0 rounded bg-primary/10 px-1 py-0.5 text-[8px] font-bold uppercase">AI</span>
+                    </div>
                   ))}
                 </div>
               )}

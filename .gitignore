@@ -37,6 +37,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# EdgeOne Makers local link/build state
+.edgeone/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

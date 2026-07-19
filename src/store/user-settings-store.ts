@@ -15,6 +15,7 @@ interface UserSettingsState {
   // Agent 为每个菜谱步骤添加的个性化提示（recipeId -> stepIndex -> tips）
   recipeTipAdditions: Record<string, Record<number, string[]>>;
   addRecipeTips: (recipeId: string, stepIndex: number, tips: string[]) => void;
+  clearRecipeTips: (recipeId: string) => void;
 
   // 用户偏好设置
   preferences: {
@@ -74,6 +75,14 @@ export const useUserSettingsStore = create<UserSettingsState>()(
               [recipeId]: { ...recipeTips, [stepIndex]: uniqueTips },
             },
           };
+        }),
+
+      clearRecipeTips: (recipeId) =>
+        set((state) => {
+          const remainingRecipeTips = { ...state.recipeTipAdditions };
+          delete remainingRecipeTips[recipeId];
+
+          return { recipeTipAdditions: remainingRecipeTips };
         }),
 
       setPreference: (key, value) =>

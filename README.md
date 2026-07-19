@@ -23,20 +23,31 @@ Makers handler lives at `agents/recipe-chef/index.ts`; `edgeone.json` enables th
 session runtime, and the client sends a stable `Makers-Conversation-Id` for each
 recipe conversation.
 
-Configure these server-side variables in the EdgeOne Makers project:
+The project is configured as an `openai-agents-sdk` Makers Agent. Start by
+linking this repository to the Agent project created/imported from the Makers
+console's **Agents** tab, then use the Makers development server:
 
 ```bash
-AI_GATEWAY_BASE_URL=https://ai-gateway.edgeone.link/v1
-AI_GATEWAY_API_KEY=sk-...
-AI_GATEWAY_MODEL=@makers/deepseek-v4-flash
+edgeone makers link
+edgeone makers dev
 ```
 
-Run and deploy with the EdgeOne CLI:
+`makers dev` serves both the Web app and Agent on the same port. Running only
+`npm run dev` does not provide the Makers Agent runtime or its built-in model.
+Deploy through the connected Git repository (recommended), or with the CLI:
 
 ```bash
-edgeone makers dev
 edgeone makers deploy -n <project-name>
 ```
+
+New Makers Agent projects use the built-in Makers Models by default. You do
+not need to create `AI_GATEWAY_API_KEY` in the Functions console for that path.
+For an existing Makers project, keep the `AI_GATEWAY_*` declarations in
+`.env.example`; current EdgeOne CLI versions provision and sync the built-in
+gateway credentials during Agent initialization/development.
+Only when switching to a native/custom model provider should you configure
+`AI_GATEWAY_BASE_URL`, `AI_GATEWAY_API_KEY`, and `AI_GATEWAY_MODEL` in the
+Makers project environment settings.
 
 When the Web app and Agent use separate domains, set
 `NEXT_PUBLIC_RECIPE_AGENT_URL=https://<agent-domain>/recipe-chef`. Keep it empty

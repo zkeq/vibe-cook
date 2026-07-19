@@ -3,12 +3,15 @@
 import { FormEvent, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   Check,
   ChefHat,
   LoaderCircle,
   Send,
   Sparkles,
+  Trash2,
   X,
 } from "lucide-react";
 import type { Recipe } from "@/lib/types";
@@ -54,8 +57,12 @@ export function RecipeAgent({
     },
   ]);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { recipeTipAdditions, addRecipeTips } = useUserSettingsStore();
+  const { recipeTipAdditions, addRecipeTips, clearRecipeTips } = useUserSettingsStore();
   const addedTips = recipeTipAdditions[recipe.id] || {};
+  const addedTipCount = Object.values(addedTips).reduce(
+    (total, stepTips) => total + stepTips.length,
+    0
+  );
 
   const chatHistory = useMemo<RecipeAgentChatMessage[]>(
     () => messages.map(({ role, content }) => ({ role, content })),
@@ -75,7 +82,12 @@ export function RecipeAgent({
       ...chatHistory,
       { role: "user" as const, content: trimmedQuestion },
     ];
-    setMessages((current) => [...current, userMessage]);
+    const assistantMessageId = crypto.randomUUID();
+    setMessages((current) => [
+      ...current,
+      userMessage,
+      { id: assistantMessageId, role: "assistant", content: "" },
+    ]);
     setInput("");
     setError("");
     setLoading(true);
@@ -88,17 +100,37 @@ export function RecipeAgent({
     });
 
     try {
-      const result = await askRecipeAgent(recipe, nextHistory, currentStepIndex);
-      setMessages((current) => [
-        ...current,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: result.message,
-          suggestions: result.suggestions,
-        },
-      ]);
+      const result = await askRecipeAgent(
+        recipe,
+        nextHistory,
+        currentStepIndex,
+        (text) => {
+          setMessages((current) =>
+            current.map((message) =>
+              message.id === assistantMessageId
+                ? { ...message, content: message.content + text }
+                : message
+            )
+          );
+        }
+      );
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === assistantMessageId
+            ? {
+                ...message,
+                content: result.message,
+                suggestions: result.suggestions,
+              }
+            : message
+        )
+      );
     } catch (caughtError) {
+      setMessages((current) =>
+        current.filter(
+          (message) => message.id !== assistantMessageId || message.content.length > 0
+        )
+      );
       setError(
         caughtError instanceof Error ? caughtError.message : "Agent 暂时没有回应，请稍后重试。"
       );
@@ -197,6 +229,17 @@ export function RecipeAgent({
                         第 {currentStepIndex + 1} 步
                       </span>
                     )}
+                    {addedTipCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => clearRecipeTips(recipe.id)}
+                        className="inline-flex shrink-0 items-center gap-1 rounded-md border border-red-200 bg-white px-2 py-1 text-[9px] font-bold text-red-600 transition-colors hover:bg-red-50"
+                        title={`清空当前菜谱的 ${addedTipCount} 条 AI 提示`}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        清空 AI 标记
+                      </button>
+                    )}
                   </div>
 
                   <div
@@ -223,13 +266,49 @@ export function RecipeAgent({
                       )}
                       <div
                         className={cn(
-                          "max-w-[84%] whitespace-pre-wrap rounded-xl border px-3.5 py-2.5 text-xs leading-relaxed shadow-sm",
+                          "max-w-[84%] rounded-xl border px-3.5 py-2.5 text-xs leading-relaxed shadow-sm",
                           message.role === "user"
                             ? "rounded-br-sm border-primary/20 bg-primary/10 text-foreground"
                             : "rounded-bl-sm border-border/70 bg-white text-foreground"
                         )}
                       >
-                        {message.content}
+                        {message.role === "assistant" ? (
+                          message.content ? (
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                h2: ({ children }) => (
+                                  <h2 className="mb-1.5 mt-3 text-sm font-black first:mt-0">
+                                    {children}
+                                  </h2>
+                                ),
+                                h3: ({ children }) => (
+                                  <h3 className="mb-1 mt-2.5 text-xs font-black first:mt-0">
+                                    {children}
+                                  </h3>
+                                ),
+                                p: ({ children }) => (
+                                  <p className="my-1.5 leading-5 first:mt-0 last:mb-0">{children}</p>
+                                ),
+                                ul: ({ children }) => (
+                                  <ul className="my-1.5 list-disc space-y-1 pl-4">{children}</ul>
+                                ),
+                                ol: ({ children }) => (
+                                  <ol className="my-1.5 list-decimal space-y-1 pl-4">{children}</ol>
+                                ),
+                                strong: ({ children }) => (
+                                  <strong className="font-black text-foreground">{children}</strong>
+                                ),
+                              }}
+                            >
+                              {message.content}
+                            </ReactMarkdown>
+                          ) : (
+                            <span className="animate-pulse text-muted-foreground">正在组织回答…</span>
+                          )
+                        ) : (
+                          <span className="whitespace-pre-wrap">{message.content}</span>
+                        )}
                       </div>
                     </div>
 

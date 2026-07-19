@@ -12,6 +12,8 @@ import {
   LoaderCircle,
   MessageSquare,
   MessageSquarePlus,
+  PanelLeftClose,
+  PanelLeftOpen,
   Send,
   Sparkles,
   Trash2,
@@ -81,6 +83,7 @@ export function RecipeAgent({
 }: RecipeAgentProps) {
   const [open, setOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -331,7 +334,12 @@ export function RecipeAgent({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 20, scale: 0.985 }}
                   transition={{ type: "spring", stiffness: 360, damping: 32 }}
-                  className="fixed inset-x-3 bottom-3 top-16 z-50 flex flex-col overflow-hidden rounded-xl border border-border/80 bg-[#fdfdfd] shadow-[0_20px_60px_-20px_rgba(120,70,30,0.35)] sm:inset-auto sm:bottom-6 sm:right-6 sm:top-auto sm:h-[min(720px,calc(100vh-3rem))] sm:w-[min(760px,calc(100vw-3rem))]"
+                  className={cn(
+                    "fixed inset-x-3 bottom-3 top-16 z-50 flex flex-col overflow-hidden rounded-xl border border-border/80 bg-[#fdfdfd] shadow-[0_20px_60px_-20px_rgba(120,70,30,0.35)] transition-[width] sm:inset-auto sm:bottom-6 sm:right-6 sm:top-auto sm:h-[min(720px,calc(100vh-3rem))]",
+                    sidebarCollapsed
+                      ? "sm:w-[440px]"
+                      : "sm:w-[min(760px,calc(100vw-3rem))]"
+                  )}
                   aria-label="菜谱 Agent 对话"
                 >
                   <header className="flex shrink-0 items-center gap-3 border-b border-border/70 bg-white px-4 py-3.5">
@@ -356,6 +364,19 @@ export function RecipeAgent({
                       <History className="h-4 w-4" />
                     </button>
                     <button
+                      type="button"
+                      onClick={() => setSidebarCollapsed((current) => !current)}
+                      className="hidden h-8 w-8 items-center justify-center rounded-full border border-border bg-white text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary sm:flex"
+                      aria-label={sidebarCollapsed ? "展开对话历史" : "收起对话历史"}
+                      title={sidebarCollapsed ? "展开对话历史" : "收起对话历史"}
+                    >
+                      {sidebarCollapsed ? (
+                        <PanelLeftOpen className="h-4 w-4" />
+                      ) : (
+                        <PanelLeftClose className="h-4 w-4" />
+                      )}
+                    </button>
+                    <button
                       onClick={() => {
                         setOpen(false);
                         setHistoryOpen(false);
@@ -378,8 +399,9 @@ export function RecipeAgent({
                     )}
                     <aside
                       className={cn(
-                        "absolute inset-y-0 left-0 z-20 flex w-[218px] flex-col border-r border-border/70 bg-[#faf7f2] transition-transform sm:static sm:z-auto sm:translate-x-0",
-                        historyOpen ? "translate-x-0" : "-translate-x-full"
+                        "absolute inset-y-0 left-0 z-20 flex w-[218px] flex-col border-r border-border/70 bg-[#fcfbf9] transition-transform sm:static sm:z-auto sm:translate-x-0",
+                        historyOpen ? "translate-x-0" : "-translate-x-full",
+                        sidebarCollapsed && "sm:hidden"
                       )}
                     >
                       <div className="border-b border-border/60 p-3">

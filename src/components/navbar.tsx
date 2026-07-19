@@ -10,6 +10,7 @@ import { useIntro } from "@/lib/intro-context";
 import { useState, useEffect, useRef } from "react";
 import recipeAPI from "@/services/recipe-api";
 import type { RecipeSummary } from "@/lib/types";
+import { RecipeFinderAgent } from "@/components/home/recipe-finder-agent";
 
 const navItems = [
   { href: "/", label: "食谱", icon: BookOpen },
@@ -32,13 +33,10 @@ export function Navbar({ onMenuClick, showMenuButton = false }: NavbarProps = {}
   const searchRef = useRef<HTMLDivElement>(null);
 
   const isCookPage = pathname ? pathname.endsWith("/cook") : false;
-  if (isCookPage) return null;
 
   // 搜索防抖
   useEffect(() => {
     if (!searchQuery.trim()) {
-      setSearchResults([]);
-      setShowResults(false);
       return;
     }
 
@@ -71,6 +69,8 @@ export function Navbar({ onMenuClick, showMenuButton = false }: NavbarProps = {}
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  if (isCookPage) return null;
+
   return (
     <motion.header
     initial={{ opacity: 0, y: -20 }}
@@ -95,7 +95,14 @@ export function Navbar({ onMenuClick, showMenuButton = false }: NavbarProps = {}
               type="text"
               placeholder="搜索菜谱..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSearchQuery(value);
+                if (!value.trim()) {
+                  setSearchResults([]);
+                  setShowResults(false);
+                }
+              }}
               onFocus={() => searchQuery && setShowResults(true)}
               className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
@@ -153,6 +160,7 @@ export function Navbar({ onMenuClick, showMenuButton = false }: NavbarProps = {}
 
         {/* Nav links - 桌面端显示 */}
         <nav className="hidden items-center gap-1 lg:flex">
+          {pathname === "/" && <RecipeFinderAgent />}
           {navItems.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
             return (

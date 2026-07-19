@@ -10,8 +10,6 @@ import {
   ChefHat,
   History,
   LoaderCircle,
-  MessageSquare,
-  MessageSquarePlus,
   PanelLeftClose,
   PanelLeftOpen,
   Send,
@@ -31,6 +29,7 @@ import {
   useRecipeAgentHistoryStore,
 } from "@/store/recipe-agent-history-store";
 import { cn } from "@/lib/utils";
+import { AgentHistorySidebar } from "@/components/agent-history-sidebar";
 
 type DisplayMessage = StoredRecipeAgentMessage;
 
@@ -65,15 +64,6 @@ function createConversation(recipe: Recipe): RecipeAgentConversation {
     updatedAt: now,
     messages: [createWelcomeMessage(recipe)],
   };
-}
-
-function formatConversationTime(value: string): string {
-  return new Intl.DateTimeFormat("zh-CN", {
-    month: "numeric",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
 }
 
 export function RecipeAgent({
@@ -397,84 +387,22 @@ export function RecipeAgent({
                         aria-label="关闭对话历史"
                       />
                     )}
-                    <aside
-                      className={cn(
-                        "absolute inset-y-0 left-0 z-20 flex w-[218px] flex-col border-r border-border/70 bg-[#fcfbf9] transition-transform sm:static sm:z-auto sm:translate-x-0",
-                        historyOpen ? "translate-x-0" : "-translate-x-full",
-                        sidebarCollapsed && "sm:hidden"
-                      )}
-                    >
-                      <div className="border-b border-border/60 p-3">
-                        <button
-                          type="button"
-                          onClick={startNewConversation}
-                          disabled={loading}
-                          className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2.5 text-[11px] font-bold text-white shadow-sm shadow-primary/15 transition-colors hover:bg-primary/90 disabled:opacity-50"
-                        >
-                          <MessageSquarePlus className="h-4 w-4" />
-                          新建对话
-                        </button>
-                      </div>
-                      <div className="min-h-0 flex-1 overflow-y-auto p-2">
-                        <div className="mb-2 flex items-center justify-between px-2 pt-1">
-                          <span className="text-[8px] font-black uppercase tracking-[0.18em] text-muted-foreground">
-                            本菜谱历史
-                          </span>
-                          <span className="text-[9px] font-bold text-muted-foreground">
-                            {recipeConversations.length}
-                          </span>
-                        </div>
-                        <div className="space-y-1">
-                          {recipeConversations.map((conversation) => (
-                            <div
-                              key={conversation.id}
-                              className={cn(
-                                "group flex items-center gap-1 rounded-lg border transition-colors",
-                                activeConversationId === conversation.id
-                                  ? "border-primary/20 bg-white shadow-sm"
-                                  : "border-transparent hover:bg-white/80"
-                              )}
-                            >
-                              <button
-                                type="button"
-                                onClick={() => openConversation(conversation)}
-                                disabled={loading}
-                                className="flex min-w-0 flex-1 items-start gap-2 px-2.5 py-2.5 text-left disabled:cursor-not-allowed"
-                              >
-                                <MessageSquare
-                                  className={cn(
-                                    "mt-0.5 h-3.5 w-3.5 shrink-0",
-                                    activeConversationId === conversation.id
-                                      ? "text-primary"
-                                      : "text-muted-foreground"
-                                  )}
-                                />
-                                <span className="min-w-0">
-                                  <span className="block truncate text-[11px] font-bold text-foreground">
-                                    {conversation.title}
-                                  </span>
-                                  <span className="mt-0.5 block text-[8px] text-muted-foreground">
-                                    {formatConversationTime(conversation.updatedAt)}
-                                  </span>
-                                </span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => deleteConversation(conversation.id)}
-                                disabled={loading}
-                                className="mr-1.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-100 transition-all hover:bg-red-50 hover:text-red-600 focus:opacity-100 disabled:hidden sm:opacity-0 sm:group-hover:opacity-100"
-                                aria-label={`删除对话：${conversation.title}`}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="border-t border-border/60 px-3 py-2.5 text-[8px] leading-relaxed text-muted-foreground">
-                        对话仅保存在当前浏览器
-                      </div>
-                    </aside>
+                    <AgentHistorySidebar
+                      items={recipeConversations}
+                      activeId={activeConversationId}
+                      open={historyOpen}
+                      collapsed={sidebarCollapsed}
+                      loading={loading}
+                      label="本菜谱历史"
+                      onNew={startNewConversation}
+                      onSelect={(conversationId) => {
+                        const conversation = recipeConversations.find(
+                          (item) => item.id === conversationId
+                        );
+                        if (conversation) openConversation(conversation);
+                      }}
+                      onDelete={deleteConversation}
+                    />
 
                     <div className="flex min-w-0 flex-1 flex-col">
                   <div className="flex shrink-0 items-center gap-2 border-b border-dashed border-border bg-orange-50/50 px-4 py-2">

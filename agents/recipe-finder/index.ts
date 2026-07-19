@@ -1,3 +1,5 @@
+import { request as httpRequest } from "node:http";
+import { request as httpsRequest } from "node:https";
 import type { Recipe, RecipeSummary } from "../../src/lib/types";
 
 interface AgentContext {
@@ -14,20 +16,9 @@ interface AgentRequestBody {
   messages?: ChatMessage[];
 }
 
-interface ToolCall {
-  id: string;
-  type: "function";
-  function: {
-    name: string;
-    arguments: string;
-  };
-}
-
 interface ModelMessage {
-  role: "system" | "user" | "assistant" | "tool";
+  role: "system" | "user" | "assistant";
   content: string | null;
-  tool_call_id?: string;
-  tool_calls?: ToolCall[];
 }
 
 interface ModelResponse {
@@ -52,6 +43,11 @@ interface RecipeSearchArgs {
   limit?: number;
 }
 
+interface RecipeSearchPlan extends RecipeSearchArgs {
+  action: "search" | "clarify";
+  question?: string;
+}
+
 interface RecipeToolResult extends RecipeSummary {
   ingredients: string[];
   matchedIngredients: string[];
@@ -72,52 +68,6 @@ export interface FinderRecommendation extends RecipeSummary {
 const RECOMMENDATIONS_MARKER = "@@VIBE_COOK_RECOMMENDATIONS@@";
 const DSML_TOOL_CALLS_START = "<｜｜DSML｜｜tool_calls>";
 const DSML_TOOL_CALLS_END = "</｜｜DSML｜｜tool_calls>";
-
-const SEARCH_TOOL = {
-  type: "function",
-  function: {
-    name: "search_recipes",
-    description:
-      "查询 Vibe Cook 的真实菜谱数据库。可按现有食材、关键词、分类、难度和耗时筛选。推荐任何菜之前必须调用此工具。",
-    parameters: {
-      type: "object",
-      properties: {
-        query: {
-          type: "string",
-          description: "菜名、口味、场景或关键词，例如下饭、清淡、面食",
-        },
-        ingredients: {
-          type: "array",
-          items: { type: "string" },
-          description: "用户手头已有的主要食材名称",
-        },
-        category: {
-          type: "string",
-          description: "可选菜谱分类，例如荤菜、素菜、主食、早餐、水产",
-        },
-        maxDifficulty: {
-          type: "integer",
-          minimum: 1,
-          maximum: 5,
-          description: "最高难度。明确是新手时使用 2，普通家常水平使用 3",
-        },
-        maxMinutes: {
-          type: "integer",
-          minimum: 5,
-          maximum: 300,
-          description: "用户可接受的最长制作时间（分钟）",
-        },
-        limit: {
-          type: "integer",
-          minimum: 1,
-          maximum: 8,
-          description: "返回候选数量，通常取 6",
-        },
-      },
-      additionalProperties: false,
-    },
-  },
-};
 
 function responseHeaders(contentType: string): HeadersInit {
   return {
@@ -149,14 +99,39 @@ async function readRequestBody(request: AgentContext["request"]): Promise<AgentR
 }
 
 async function fetchJson<T>(url: string, signal: AbortSignal): Promise<T> {
-  const response = await fetch(url, {
-    headers: { Accept: "application/json" },
-    signal,
+  return new Promise<T>((resolve, reject) => {
+    const requestTransport = new URL(url).protocol === "http:" ? httpRequest : httpsRequest;
+    const request = requestTransport(
+      url,
+      {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        signal,
+      },
+      (response) => {
+        const chunks: Buffer[] = [];
+        response.on("data", (chunk: Buffer) => chunks.push(chunk));
+        response.on("end", () => {
+          const status = response.statusCode || 500;
+          if (status < 200 || status >= 300) {
+            reject(new Error(`菜谱 API 请求失败（${status}）`));
+            return;
+          }
+          try {
+            resolve(JSON.parse(Buffer.concat(chunks).toString("utf8")) as T);
+          } catch {
+            reject(new Error("菜谱 API 返回了无效 JSON"));
+          }
+        });
+      }
+    );
+
+    request.setTimeout(30_000, () => {
+      request.destroy(new Error("菜谱 API 连接超时（30 秒）"));
+    });
+    request.on("error", (error) => reject(error));
+    request.end();
   });
-  if (!response.ok) {
-    throw new Error(`菜谱 API 请求失败（${response.status}）`);
-  }
-  return response.json() as Promise<T>;
 }
 
 function toSummary(recipe: Recipe): RecipeSummary {
@@ -205,51 +180,22 @@ function parseToolArguments(value: string): RecipeSearchArgs {
   }
 }
 
-function parseDsmlToolCalls(content: string | null | undefined): ToolCall[] {
-  if (!content?.includes("DSML")) return [];
+function parseSearchPlan(content: string | null | undefined): RecipeSearchPlan | null {
+  if (!content) return null;
+  const objectMatch = content.match(/\{[\s\S]*\}/);
+  if (!objectMatch) return null;
 
-  const calls: ToolCall[] = [];
-  const invokePattern =
-    /<｜｜DSML｜｜invoke\s+name="([^"]+)">([\s\S]*?)<\/｜｜DSML｜｜invoke>/g;
-  let invokeMatch: RegExpExecArray | null;
-
-  while ((invokeMatch = invokePattern.exec(content)) !== null) {
-    const args: Record<string, unknown> = {};
-    const parameterPattern =
-      /<｜｜DSML｜｜parameter\s+name="([^"]+)"(?:\s+string="[^"]+")?>([\s\S]*?)<\/｜｜DSML｜｜parameter>/g;
-    let parameterMatch: RegExpExecArray | null;
-
-    while ((parameterMatch = parameterPattern.exec(invokeMatch[2])) !== null) {
-      const name = parameterMatch[1];
-      const rawValue = parameterMatch[2].trim();
-      if (["maxDifficulty", "maxMinutes", "limit"].includes(name)) {
-        const numericValue = Number(rawValue);
-        if (Number.isFinite(numericValue)) args[name] = numericValue;
-      } else if (name === "ingredients") {
-        try {
-          const parsed = JSON.parse(rawValue) as unknown;
-          args[name] = Array.isArray(parsed)
-            ? parsed
-            : rawValue.split(/[,，、\s]+/).filter(Boolean);
-        } catch {
-          args[name] = rawValue.split(/[,，、\s]+/).filter(Boolean);
-        }
-      } else {
-        args[name] = rawValue;
-      }
-    }
-
-    calls.push({
-      id: `dsml_${crypto.randomUUID().replace(/-/g, "").slice(0, 24)}`,
-      type: "function",
-      function: {
-        name: invokeMatch[1],
-        arguments: JSON.stringify(args),
-      },
-    });
+  try {
+    const parsed = JSON.parse(objectMatch[0]) as Record<string, unknown>;
+    const args = parseToolArguments(JSON.stringify(parsed));
+    return {
+      ...args,
+      action: parsed.action === "clarify" ? "clarify" : "search",
+      question: typeof parsed.question === "string" ? parsed.question.trim() : undefined,
+    };
+  } catch {
+    return null;
   }
-
-  return calls;
 }
 
 async function searchRecipes(
@@ -411,7 +357,7 @@ export async function onRequest(context: AgentContext): Promise<Response> {
   );
   const model = context.env.AI_GATEWAY_MODEL || "@makers/deepseek-v4-flash";
   const recipeApiBase = (
-    context.env.RECIPE_API_BASE_URL || "https://cook-api.corerevive.cn/api/v1"
+    context.env.RECIPE_API_BASE_URL || "http://cook-api.corerevive.cn/api/v1"
   ).replace(/\/$/, "");
 
   if (!apiKey) {
@@ -430,127 +376,111 @@ export async function onRequest(context: AgentContext): Promise<Response> {
     return jsonResponse({ error: "缺少对话内容。" }, 422);
   }
 
-  const systemPrompt = `你是 Vibe Cook 首页的选菜主厨 Agent。你的目标不是泛泛推荐，而是通过多轮对话理解用户的厨艺、现有食材、人数、口味和可用时间，再从真实菜谱数据库中选出最适合现在做的菜。
+  const plannerPrompt = `你是 Vibe Cook 的菜谱检索规划器。你只负责把完整对话转换成一次检索计划，不回答用户，不调用任何工具，不输出 DSML 或 XML。
+
+只输出一个合法 JSON 对象，不使用 Markdown：
+{"action":"search","query":"","ingredients":[],"category":"","maxDifficulty":3,"maxMinutes":60,"limit":6,"question":""}
+
+规则：
+- 用户明确要求推荐时应使用 search，不要因为缺少食材而反复追问。例如“我是新手，推荐几道菜”已经足够检索。
+- 用户说自己是新手时 maxDifficulty 设为 2；普通家常菜最多设为 3。
+- ingredients 只放用户明确拥有或想用的主要食材，每项一个名称。
+- query 只放明确的菜名、口味或场景关键词；不要把“新手”“家常”“好做”放进 query，这些由难度筛选处理。
+- maxMinutes 仅在用户明确提出时间限制时填写，否则省略。
+- 只有用户既没有要求推荐、也没有提供任何可执行方向时才用 clarify，并在 question 中只追问一个问题。`;
+
+  const finalPrompt = `你是 Vibe Cook 首页的选菜主厨。服务端已经替你完成了菜谱检索，你不能调用工具，也绝对不能输出 DSML、tool_calls、invoke 标签或内部参数。
 
 工作规则：
-- 用户条件足够时，必须调用 search_recipes 查询数据库；禁止推荐工具未返回的菜。
-- 用户说自己是新手时，将 maxDifficulty 设为 2；如果结果太少，可以说明原因后放宽到 3。
-- 用户给出现有食材时，把主要食材逐项传给 ingredients；优先选择食材覆盖率高、额外采购少的菜。
-- 如果信息过于模糊，先只追问一个最能缩小范围的问题，不要一次盘问很多项。
-- 已经能给出合理候选时不要继续追问。通常推荐 2–4 道，并清楚说明为什么适合。
-- 不展示内部工具、参数、JSON 或思考过程。
+- 如果收到“菜谱数据库候选”，从中推荐 2–4 道最合适的菜，只能使用候选中的 recipeId。
+- 优先选择用户已有食材覆盖率高、难度低、耗时短的菜，并说明各自区别。
+- 如果收到“需要继续追问”，自然地只问一个最关键的问题。
+- 不要声称数据库连接失败；真正的查询错误会由服务端直接处理。
 
 最终回复协议：
-1. 先输出自然、简洁的 Markdown 回复。追问时通常 1–3 句；推荐时说明判断依据和选择差异。
+1. 先输出自然、清楚的 Markdown 回复。
 2. 末尾单独输出一行 ${RECOMMENDATIONS_MARKER}
 3. 随后输出 JSON 数组，不使用代码块：
-[{"recipeId":"数据库返回的 ID","reason":"推荐原因","matchedIngredients":["已匹配食材"]}]
-4. 如果当前只需追问，数组输出 []。`;
+[{"recipeId":"候选中的 ID","reason":"推荐原因","matchedIngredients":["已匹配食材"]}]
+4. 追问时数组输出 []。`;
 
-  const planningMessages: ModelMessage[] = [
-    { role: "system", content: systemPrompt },
-    ...messages.map((message) => ({ role: message.role, content: message.content })),
-  ];
   const recipeCatalog = new Map<string, RecipeToolResult>();
 
   try {
-    for (let iteration = 0; iteration < 3; iteration += 1) {
-      const planningResponse = await fetch(`${modelBase}/chat/completions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model,
-          temperature: 0.4,
-          stream: false,
-          messages: planningMessages,
-          tools: [SEARCH_TOOL],
-          tool_choice: "auto",
-        }),
-        signal: context.request.signal,
-      });
+    const planningResponse = await fetch(`${modelBase}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        temperature: 0.2,
+        stream: false,
+        messages: [
+          { role: "system", content: plannerPrompt },
+          ...messages.map((message) => ({ role: message.role, content: message.content })),
+        ],
+      }),
+      signal: context.request.signal,
+    });
 
-      const planningResult = (await planningResponse.json().catch(() => null)) as ModelResponse | null;
-      if (!planningResponse.ok) {
+    const planningResult = (await planningResponse.json().catch(() => null)) as ModelResponse | null;
+    if (!planningResponse.ok) {
+      return jsonResponse(
+        { error: planningResult?.error?.message || `模型规划失败（${planningResponse.status}）` },
+        502
+      );
+    }
+
+    const conversationText = messages.map((message) => message.content).join("\n");
+    const plan = parseSearchPlan(planningResult?.choices?.[0]?.message?.content) || {
+      action: "search" as const,
+      ingredients: [],
+      maxDifficulty: /新手|不会做|零基础/.test(conversationText) ? 2 : 3,
+      limit: 6,
+    };
+    const finalMessages: ModelMessage[] = [
+      { role: "system", content: finalPrompt },
+      ...messages.map((message) => ({ role: message.role, content: message.content })),
+    ];
+
+    if (plan.action === "clarify") {
+      finalMessages.push({
+        role: "system",
+        content: `需要继续追问：${plan.question || "请询问用户手头的主要食材或想吃的口味。"}`,
+      });
+    } else {
+      let recipes: RecipeToolResult[];
+      try {
+        recipes = await searchRecipes(plan, recipeApiBase, context.request.signal);
+        if (recipes.length === 0 && plan.maxDifficulty === 2) {
+          recipes = await searchRecipes(
+            { ...plan, maxDifficulty: 3 },
+            recipeApiBase,
+            context.request.signal
+          );
+        }
+      } catch (error) {
         return jsonResponse(
-          { error: planningResult?.error?.message || `模型规划失败（${planningResponse.status}）` },
+          {
+            error:
+              error instanceof Error
+                ? `菜谱查询失败：${error.message}`
+                : "菜谱查询失败，请稍后重试。",
+          },
           502
         );
       }
 
-      const assistantMessage = planningResult?.choices?.[0]?.message;
-      const nativeToolCalls = assistantMessage?.tool_calls || [];
-      const dsmlToolCalls =
-        nativeToolCalls.length === 0 ? parseDsmlToolCalls(assistantMessage?.content) : [];
-      const toolCalls = nativeToolCalls.length > 0 ? nativeToolCalls : dsmlToolCalls;
-      if (toolCalls.length === 0) break;
-
-      if (nativeToolCalls.length > 0) {
-        planningMessages.push({
-          role: "assistant",
-          content: assistantMessage?.content || null,
-          tool_calls: toolCalls,
-        });
-      } else {
-        planningMessages.push({
-          role: "assistant",
-          content: "我会先查询 Vibe Cook 菜谱库，再根据结果给出推荐。",
-        });
-      }
-
-      for (const toolCall of toolCalls) {
-        if (toolCall.function.name !== "search_recipes") continue;
-        try {
-          const args = parseToolArguments(toolCall.function.arguments);
-          const recipes = await searchRecipes(args, recipeApiBase, context.request.signal);
-          recipes.forEach((recipe) => recipeCatalog.set(recipe.id, recipe));
-          const toolResult = JSON.stringify({
-            count: recipes.length,
-            recipes: recipes.map((recipe) => ({
-              ...recipe,
-              cover_image: undefined,
-            })),
-          });
-          planningMessages.push(
-            nativeToolCalls.length > 0
-              ? {
-                  role: "tool",
-                  tool_call_id: toolCall.id,
-                  content: toolResult,
-                }
-              : {
-                  role: "system",
-                  content: `search_recipes 已执行，以下是可信的数据库结果：${toolResult}`,
-                }
-          );
-        } catch (error) {
-          const toolError = JSON.stringify({
-            error: error instanceof Error ? error.message : "菜谱查询失败",
-            recipes: [],
-          });
-          planningMessages.push(
-            nativeToolCalls.length > 0
-              ? {
-                  role: "tool",
-                  tool_call_id: toolCall.id,
-                  content: toolError,
-                }
-              : {
-                  role: "system",
-                  content: `search_recipes 执行失败：${toolError}`,
-                }
-          );
-        }
-      }
+      recipes.forEach((recipe) => recipeCatalog.set(recipe.id, recipe));
+      finalMessages.push({
+        role: "system",
+        content: `菜谱数据库候选（共 ${recipes.length} 条）：${JSON.stringify(
+          recipes.map((recipe) => ({ ...recipe, cover_image: undefined }))
+        )}`,
+      });
     }
-
-    planningMessages.push({
-      role: "system",
-      content:
-        "工具调用阶段已经结束。现在不要再调用工具，也绝对不要输出 DSML、tool_calls 或 invoke 标签；直接面向用户给出最终回复，并严格遵守 Markdown + 推荐标记 + JSON 数组的输出协议。只能使用已返回工具结果中的 recipeId。",
-    });
 
     const modelResponse = await fetch(`${modelBase}/chat/completions`, {
       method: "POST",
@@ -562,7 +492,7 @@ export async function onRequest(context: AgentContext): Promise<Response> {
         model,
         temperature: 0.7,
         stream: true,
-        messages: planningMessages,
+        messages: finalMessages,
       }),
       signal: context.request.signal,
     });

@@ -346,6 +346,18 @@ function extractRecommendations(
   return recommendations;
 }
 
+function describeSearchPlan(plan: RecipeSearchPlan): string {
+  if (plan.action === "clarify") return "还缺少一个关键条件，先向你确认";
+
+  const conditions: string[] = [];
+  if (plan.ingredients?.length) conditions.push(`食材：${plan.ingredients.join("、")}`);
+  if (plan.query) conditions.push(`方向：${plan.query}`);
+  if (plan.category) conditions.push(`分类：${plan.category}`);
+  if (plan.maxDifficulty) conditions.push(`难度不高于 ${plan.maxDifficulty}`);
+  if (plan.maxMinutes) conditions.push(`${plan.maxMinutes} 分钟内`);
+  return conditions.join(" · ") || "按家常、易上手的方向检索";
+}
+
 export async function onRequest(context: AgentContext): Promise<Response> {
   if (context.request.method === "OPTIONS") {
     return new Response(null, {
@@ -415,113 +427,167 @@ export async function onRequest(context: AgentContext): Promise<Response> {
 [{"recipeId":"候选中的 ID","reason":"推荐原因","matchedIngredients":["已匹配食材"]}]
 4. 追问时数组输出 []。`;
 
-  const recipeCatalog = new Map<string, RecipeToolResult>();
+  const responseStream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const recipeCatalog = new Map<string, RecipeToolResult>();
+      let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+      let activeTrace:
+        | { id: string; kind: "agent" | "tool" | "rule"; title: string }
+        | undefined;
 
-  try {
-    const planningResponse = await fetch(`${modelBase}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        temperature: 0.2,
-        stream: false,
-        messages: [
-          { role: "system", content: plannerPrompt },
-          ...messages.map((message) => ({ role: message.role, content: message.content })),
-        ],
-      }),
-      signal: context.request.signal,
-    });
+      const emitTrace = (
+        id: string,
+        kind: "agent" | "tool" | "rule",
+        title: string,
+        detail: string,
+        status: "running" | "complete" | "error"
+      ) => {
+        controller.enqueue(streamEvent("trace", { id, kind, title, detail, status }));
+        activeTrace = status === "running" ? { id, kind, title } : undefined;
+      };
 
-    const planningResult = (await planningResponse.json().catch(() => null)) as ModelResponse | null;
-    if (!planningResponse.ok) {
-      return jsonResponse(
-        { error: planningResult?.error?.message || `模型规划失败（${planningResponse.status}）` },
-        502
-      );
-    }
-
-    const conversationText = messages.map((message) => message.content).join("\n");
-    const plan = parseSearchPlan(planningResult?.choices?.[0]?.message?.content) || {
-      action: "search" as const,
-      ingredients: [],
-      maxDifficulty: /新手|不会做|零基础/.test(conversationText) ? 2 : 3,
-      limit: 8,
-    };
-    const finalMessages: ModelMessage[] = [
-      { role: "system", content: finalPrompt },
-      ...messages.map((message) => ({ role: message.role, content: message.content })),
-    ];
-
-    if (plan.action === "clarify") {
-      finalMessages.push({
-        role: "system",
-        content: `需要继续追问：${plan.question || "请询问用户手头的主要食材或想吃的口味。"}`,
-      });
-    } else {
-      let recipes: RecipeToolResult[];
       try {
-        recipes = await searchRecipes(plan, recipeApiBase, context.request.signal);
-        if (recipes.length === 0 && plan.maxDifficulty === 2) {
-          recipes = await searchRecipes(
-            { ...plan, maxDifficulty: 3 },
-            recipeApiBase,
-            context.request.signal
+        emitTrace(
+          "intent",
+          "agent",
+          "理解你的需求",
+          "正在从完整对话中提取食材、厨艺、口味和时间要求",
+          "running"
+        );
+
+        const planningResponse = await fetch(`${modelBase}/chat/completions`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            temperature: 0.2,
+            stream: false,
+            messages: [
+              { role: "system", content: plannerPrompt },
+              ...messages.map((message) => ({ role: message.role, content: message.content })),
+            ],
+          }),
+          signal: context.request.signal,
+        });
+
+        const planningResult = (await planningResponse
+          .json()
+          .catch(() => null)) as ModelResponse | null;
+        if (!planningResponse.ok) {
+          throw new Error(
+            planningResult?.error?.message || `模型规划失败（${planningResponse.status}）`
           );
         }
-      } catch (error) {
-        return jsonResponse(
-          {
-            error:
+
+        const conversationText = messages.map((message) => message.content).join("\n");
+        const plan = parseSearchPlan(planningResult?.choices?.[0]?.message?.content) || {
+          action: "search" as const,
+          ingredients: [],
+          maxDifficulty: /新手|不会做|零基础/.test(conversationText) ? 2 : 3,
+          limit: 8,
+        };
+        emitTrace("intent", "agent", "理解你的需求", describeSearchPlan(plan), "complete");
+
+        const finalMessages: ModelMessage[] = [
+          { role: "system", content: finalPrompt },
+          ...messages.map((message) => ({ role: message.role, content: message.content })),
+        ];
+
+        if (plan.action === "clarify") {
+          finalMessages.push({
+            role: "system",
+            content: `需要继续追问：${plan.question || "请询问用户手头的主要食材或想吃的口味。"}`,
+          });
+        } else {
+          emitTrace(
+            "search",
+            "tool",
+            "调用菜谱检索工具",
+            plan.ingredients?.length
+              ? `正在用 ${plan.ingredients.join("、")} 查询真实菜谱库`
+              : `正在按${plan.query || plan.category || "家常菜"}方向查询真实菜谱库`,
+            "running"
+          );
+
+          let recipes: RecipeToolResult[];
+          try {
+            recipes = await searchRecipes(plan, recipeApiBase, context.request.signal);
+            if (recipes.length === 0 && plan.maxDifficulty === 2) {
+              recipes = await searchRecipes(
+                { ...plan, maxDifficulty: 3 },
+                recipeApiBase,
+                context.request.signal
+              );
+            }
+          } catch (error) {
+            throw new Error(
               error instanceof Error
                 ? `菜谱查询失败：${error.message}`
-                : "菜谱查询失败，请稍后重试。",
-          },
-          502
+                : "菜谱查询失败，请稍后重试。"
+            );
+          }
+
+          emitTrace(
+            "search",
+            "tool",
+            "调用菜谱检索工具",
+            `已从真实菜谱库取得 ${recipes.length} 道有效候选`,
+            "complete"
+          );
+          emitTrace(
+            "rank",
+            "rule",
+            "筛选并排序候选",
+            recipes.length > 0
+              ? `已按食材匹配、难度和耗时排序，保留 ${recipes.length} 道`
+              : "没有找到满足当前条件的菜谱，准备给出下一步建议",
+            "complete"
+          );
+
+          recipes.forEach((recipe) => recipeCatalog.set(recipe.id, recipe));
+          finalMessages.push({
+            role: "system",
+            content: `菜谱数据库候选（共 ${recipes.length} 条）：${JSON.stringify(
+              recipes.map((recipe) => ({ ...recipe, cover_image: undefined }))
+            )}`,
+          });
+        }
+
+        emitTrace(
+          "answer",
+          "agent",
+          "主厨组织推荐",
+          recipeCatalog.size > 0
+            ? `正在比较 ${recipeCatalog.size} 道候选并生成推荐理由`
+            : "正在根据当前信息组织下一步回复",
+          "running"
         );
-      }
 
-      recipes.forEach((recipe) => recipeCatalog.set(recipe.id, recipe));
-      finalMessages.push({
-        role: "system",
-        content: `菜谱数据库候选（共 ${recipes.length} 条）：${JSON.stringify(
-          recipes.map((recipe) => ({ ...recipe, cover_image: undefined }))
-        )}`,
-      });
-    }
+        const modelResponse = await fetch(`${modelBase}/chat/completions`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            temperature: 0.7,
+            stream: true,
+            messages: finalMessages,
+          }),
+          signal: context.request.signal,
+        });
 
-    const modelResponse = await fetch(`${modelBase}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        temperature: 0.7,
-        stream: true,
-        messages: finalMessages,
-      }),
-      signal: context.request.signal,
-    });
+        if (!modelResponse.ok) {
+          const result = (await modelResponse.json().catch(() => null)) as ModelResponse | null;
+          throw new Error(result?.error?.message || `模型请求失败（${modelResponse.status}）`);
+        }
+        if (!modelResponse.body) throw new Error("模型没有返回有效内容。");
 
-    if (!modelResponse.ok) {
-      const result = (await modelResponse.json().catch(() => null)) as ModelResponse | null;
-      return jsonResponse(
-        { error: result?.error?.message || `模型请求失败（${modelResponse.status}）` },
-        502
-      );
-    }
-    if (!modelResponse.body) {
-      return jsonResponse({ error: "模型没有返回有效内容。" }, 502);
-    }
-
-    const responseStream = new ReadableStream<Uint8Array>({
-      async start(controller) {
-        const reader = modelResponse.body!.getReader();
+        reader = modelResponse.body.getReader();
         const decoder = new TextDecoder();
         let upstreamBuffer = "";
         let protocolBuffer = "";
@@ -550,9 +616,7 @@ export async function onRequest(context: AgentContext): Promise<Response> {
                     );
                 return;
               }
-              protocolBuffer = protocolBuffer.slice(
-                dsmlEndIndex + DSML_TOOL_CALLS_END.length
-              );
+              protocolBuffer = protocolBuffer.slice(dsmlEndIndex + DSML_TOOL_CALLS_END.length);
               filteringDsml = false;
               continue;
             }
@@ -605,50 +669,54 @@ export async function onRequest(context: AgentContext): Promise<Response> {
           }
         };
 
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            upstreamBuffer += decoder.decode(value, { stream: !done });
-            const eventBlocks = upstreamBuffer.split(/\r?\n\r?\n/);
-            upstreamBuffer = eventBlocks.pop() || "";
-            eventBlocks.forEach(processUpstreamEvent);
-            if (done) break;
-          }
-          if (upstreamBuffer.trim()) processUpstreamEvent(upstreamBuffer);
-          processProtocolText("", true);
-          controller.enqueue(
-            streamEvent("complete", {
-              recommendations: markerFound
-                ? extractRecommendations(recommendationsBuffer, recipeCatalog)
-                : [],
-            })
-          );
-        } catch (error) {
-          controller.enqueue(
-            streamEvent("error", {
-              error: error instanceof Error ? error.message : "选菜 Agent 流式回复中断。",
-            })
-          );
-        } finally {
-          controller.close();
-          reader.releaseLock();
+        while (true) {
+          const { done, value } = await reader.read();
+          upstreamBuffer += decoder.decode(value, { stream: !done });
+          const eventBlocks = upstreamBuffer.split(/\r?\n\r?\n/);
+          upstreamBuffer = eventBlocks.pop() || "";
+          eventBlocks.forEach(processUpstreamEvent);
+          if (done) break;
         }
-      },
-    });
+        if (upstreamBuffer.trim()) processUpstreamEvent(upstreamBuffer);
+        processProtocolText("", true);
 
-    return new Response(responseStream, {
-      headers: {
-        ...responseHeaders("text/event-stream; charset=utf-8"),
-        "Cache-Control": "no-cache, no-transform",
-      },
-    });
-  } catch (error) {
-    if (context.request.signal.aborted) {
-      return jsonResponse({ error: "本次选菜对话已取消。" }, 499);
-    }
-    return jsonResponse(
-      { error: error instanceof Error ? error.message : "选菜 Agent 暂时不可用。" },
-      500
-    );
-  }
+        emitTrace(
+          "answer",
+          "agent",
+          "主厨组织推荐",
+          recipeCatalog.size > 0
+            ? "推荐说明与菜谱卡片已生成"
+            : "回复已生成",
+          "complete"
+        );
+        controller.enqueue(
+          streamEvent("complete", {
+            recommendations: markerFound
+              ? extractRecommendations(recommendationsBuffer, recipeCatalog)
+              : [],
+          })
+        );
+      } catch (error) {
+        const errorMessage = context.request.signal.aborted
+          ? "本次选菜对话已取消。"
+          : error instanceof Error
+            ? error.message
+            : "选菜 Agent 暂时不可用。";
+        if (activeTrace) {
+          emitTrace(activeTrace.id, activeTrace.kind, activeTrace.title, errorMessage, "error");
+        }
+        controller.enqueue(streamEvent("error", { error: errorMessage }));
+      } finally {
+        controller.close();
+        reader?.releaseLock();
+      }
+    },
+  });
+
+  return new Response(responseStream, {
+    headers: {
+      ...responseHeaders("text/event-stream; charset=utf-8"),
+      "Cache-Control": "no-cache, no-transform",
+    },
+  });
 }

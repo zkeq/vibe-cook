@@ -10,9 +10,21 @@ export interface RecipeFinderRecommendation extends RecipeSummary {
   matchedIngredients: string[];
 }
 
+export type RecipeFinderTraceStatus = "running" | "complete" | "error";
+export type RecipeFinderTraceKind = "agent" | "tool" | "rule";
+
+export interface RecipeFinderTraceStep {
+  id: string;
+  kind: RecipeFinderTraceKind;
+  title: string;
+  detail: string;
+  status: RecipeFinderTraceStatus;
+}
+
 export interface RecipeFinderAgentResponse {
   message: string;
   recommendations: RecipeFinderRecommendation[];
+  trace: RecipeFinderTraceStep[];
 }
 
 function getAgentEndpoint(): string {
@@ -23,7 +35,8 @@ function getAgentEndpoint(): string {
 export async function askRecipeFinderAgent(
   messages: RecipeFinderChatMessage[],
   conversationId: string,
-  onDelta?: (text: string) => void
+  onDelta?: (text: string) => void,
+  onTrace?: (step: RecipeFinderTraceStep) => void
 ): Promise<RecipeFinderAgentResponse> {
   const response = await fetch(getAgentEndpoint(), {
     method: "POST",
@@ -44,7 +57,10 @@ export async function askRecipeFinderAgent(
     );
   }
   if (!response.headers.get("content-type")?.includes("text/event-stream")) {
-    return response.json() as Promise<RecipeFinderAgentResponse>;
+    const result = (await response.json()) as Omit<RecipeFinderAgentResponse, "trace"> & {
+      trace?: RecipeFinderTraceStep[];
+    };
+    return { ...result, trace: result.trace || [] };
   }
   if (!response.body) throw new Error("选菜 Agent 没有返回可读取的流。");
 
@@ -53,7 +69,15 @@ export async function askRecipeFinderAgent(
   let buffer = "";
   let message = "";
   let recommendations: RecipeFinderRecommendation[] = [];
+  const trace: RecipeFinderTraceStep[] = [];
   let streamError = "";
+
+  const mergeTraceStep = (step: RecipeFinderTraceStep) => {
+    const index = trace.findIndex((item) => item.id === step.id);
+    if (index >= 0) trace[index] = step;
+    else trace.push(step);
+    onTrace?.(step);
+  };
 
   const processEvent = (eventBlock: string) => {
     const eventName = eventBlock
@@ -71,6 +95,11 @@ export async function askRecipeFinderAgent(
     const data = JSON.parse(dataText) as {
       text?: string;
       recommendations?: RecipeFinderRecommendation[];
+      id?: string;
+      kind?: RecipeFinderTraceKind;
+      title?: string;
+      detail?: string;
+      status?: RecipeFinderTraceStatus;
       error?: string;
     };
     if (eventName === "delta" && data.text) {
@@ -78,6 +107,21 @@ export async function askRecipeFinderAgent(
       onDelta?.(data.text);
     } else if (eventName === "complete") {
       recommendations = Array.isArray(data.recommendations) ? data.recommendations : [];
+    } else if (
+      eventName === "trace" &&
+      data.id &&
+      data.kind &&
+      data.title &&
+      data.detail &&
+      data.status
+    ) {
+      mergeTraceStep({
+        id: data.id,
+        kind: data.kind,
+        title: data.title,
+        detail: data.detail,
+        status: data.status,
+      });
     } else if (eventName === "error") {
       streamError = data.error || "选菜 Agent 流式回复中断。";
     }
@@ -94,5 +138,5 @@ export async function askRecipeFinderAgent(
   if (buffer.trim()) processEvent(buffer);
   if (streamError) throw new Error(streamError);
 
-  return { message: message.trim(), recommendations };
+  return { message: message.trim(), recommendations, trace };
 }

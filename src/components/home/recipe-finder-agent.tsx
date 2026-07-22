@@ -6,19 +6,23 @@ import { AnimatePresence, motion } from "motion/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
+  Check,
   ChefHat,
+  ChevronDown,
   Database,
   History,
   LoaderCircle,
   PanelLeftClose,
   PanelLeftOpen,
   Send,
+  SlidersHorizontal,
   Sparkles,
   X,
 } from "lucide-react";
 import {
   askRecipeFinderAgent,
   type RecipeFinderChatMessage,
+  type RecipeFinderTraceStep,
 } from "@/lib/recipe-finder-agent";
 import {
   type RecipeFinderConversation,
@@ -34,6 +38,132 @@ const QUICK_QUESTIONS = [
   "我有鸡蛋、西红柿和土豆，能做什么？",
   "想做一道 20 分钟以内的下饭菜",
 ];
+
+const TRACE_KIND_LABELS = {
+  agent: "Agent",
+  tool: "工具",
+  rule: "规则",
+} as const;
+
+function TraceStepIcon({ step }: { step: RecipeFinderTraceStep }) {
+  if (step.status === "running") {
+    return <LoaderCircle className="h-3 w-3 animate-spin" />;
+  }
+  if (step.status === "complete") return <Check className="h-3 w-3" />;
+  if (step.kind === "tool") return <Database className="h-3 w-3" />;
+  if (step.kind === "rule") return <SlidersHorizontal className="h-3 w-3" />;
+  return <Sparkles className="h-3 w-3" />;
+}
+
+function AgentExecutionTrace({ steps }: { steps: RecipeFinderTraceStep[] }) {
+  const [expanded, setExpanded] = useState(() =>
+    steps.some((step) => step.status === "running")
+  );
+  const running = steps.some((step) => step.status === "running");
+  const failed = steps.some((step) => step.status === "error");
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-primary/15 bg-[#fffaf4] shadow-sm">
+      <button
+        type="button"
+        onClick={() => setExpanded((current) => !current)}
+        className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-primary/[0.035]"
+        aria-expanded={expanded}
+      >
+        <span
+          className={cn(
+            "flex h-6 w-6 shrink-0 items-center justify-center rounded-lg",
+            failed
+              ? "bg-red-100 text-red-600"
+              : running
+                ? "bg-primary/12 text-primary"
+                : "bg-emerald-100 text-emerald-700"
+          )}
+        >
+          {running ? (
+            <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+          ) : failed ? (
+            <X className="h-3.5 w-3.5" />
+          ) : (
+            <Check className="h-3.5 w-3.5" />
+          )}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[11px] font-black text-foreground">Agent 执行轨迹</span>
+          <span className="block truncate text-[9px] text-muted-foreground">
+            {failed
+              ? "执行遇到问题"
+              : running
+                ? `${steps.length} 个节点正在协作`
+                : `${steps.length} 个节点已完成`}
+          </span>
+        </span>
+        <span
+          className={cn(
+            "rounded-full px-2 py-0.5 text-[8px] font-bold",
+            failed
+              ? "bg-red-100 text-red-600"
+              : running
+                ? "bg-primary/10 text-primary"
+                : "bg-emerald-100 text-emerald-700"
+          )}
+        >
+          {failed ? "异常" : running ? "进行中" : "已完成"}
+        </span>
+        <ChevronDown
+          className={cn(
+            "h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform",
+            expanded && "rotate-180"
+          )}
+        />
+      </button>
+
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="border-t border-primary/10 px-3 pb-3 pt-2.5">
+              {steps.map((step, index) => (
+                <div key={step.id} className="relative flex gap-2.5 pb-3 last:pb-0">
+                  {index < steps.length - 1 && (
+                    <span className="absolute left-3 top-5 h-[calc(100%-8px)] w-px bg-primary/15" />
+                  )}
+                  <span
+                    className={cn(
+                      "relative z-10 mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border bg-white",
+                      step.status === "error"
+                        ? "border-red-200 text-red-600"
+                        : step.status === "running"
+                          ? "border-primary/30 text-primary"
+                          : "border-emerald-200 text-emerald-700"
+                    )}
+                  >
+                    <TraceStepIcon step={step} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold text-foreground">{step.title}</span>
+                      <span className="rounded bg-white px-1.5 py-0.5 text-[7px] font-bold text-muted-foreground ring-1 ring-border/70">
+                        {TRACE_KIND_LABELS[step.kind]}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-[9px] leading-4 text-muted-foreground">
+                      {step.detail}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 function createWelcomeMessage(): StoredRecipeFinderMessage {
   return {
@@ -202,6 +332,24 @@ export function RecipeFinderAgent({ compact = false }: RecipeFinderAgentProps = 
             ),
           });
           scrollToBottom();
+        },
+        (step) => {
+          const current = useRecipeFinderAgentStore
+            .getState()
+            .conversations.find((item) => item.id === conversation.id);
+          if (!current) return;
+          upsertConversation({
+            ...current,
+            messages: current.messages.map((message) => {
+              if (message.id !== assistantMessageId) return message;
+              const trace = [...(message.trace || [])];
+              const stepIndex = trace.findIndex((item) => item.id === step.id);
+              if (stepIndex >= 0) trace[stepIndex] = step;
+              else trace.push(step);
+              return { ...message, trace };
+            }),
+          });
+          scrollToBottom();
         }
       );
       const current = useRecipeFinderAgentStore
@@ -217,6 +365,7 @@ export function RecipeFinderAgent({ compact = false }: RecipeFinderAgentProps = 
                   ...message,
                   content: result.message,
                   recommendations: result.recommendations,
+                  trace: result.trace,
                 }
               : message
           ),
@@ -226,7 +375,10 @@ export function RecipeFinderAgent({ compact = false }: RecipeFinderAgentProps = 
       const current = useRecipeFinderAgentStore
         .getState()
         .conversations.find((item) => item.id === conversation.id);
-      if (current && !streamedText) {
+      const pendingMessage = current?.messages.find(
+        (message) => message.id === assistantMessageId
+      );
+      if (current && !streamedText && !pendingMessage?.trace?.length) {
         upsertConversation({
           ...current,
           messages: current.messages.filter((message) => message.id !== assistantMessageId),
@@ -392,42 +544,53 @@ export function RecipeFinderAgent({ compact = false }: RecipeFinderAgentProps = 
                                   <ChefHat className="h-3.5 w-3.5" />
                                 </div>
                               )}
-                              <div
-                                className={cn(
-                                  "max-w-[84%] rounded-xl border px-3.5 py-2.5 text-xs leading-5 shadow-sm",
-                                  message.role === "user"
-                                    ? "rounded-br-sm border-primary/20 bg-primary/10 text-foreground"
-                                    : "rounded-bl-sm border-border/70 bg-white text-foreground"
-                                )}
-                              >
-                                {message.role === "assistant" ? (
-                                  message.content ? (
-                                    <ReactMarkdown
-                                      remarkPlugins={[remarkGfm]}
-                                      components={{
-                                        p: ({ children }) => (
-                                          <p className="my-1.5 first:mt-0 last:mb-0">{children}</p>
-                                        ),
-                                        ul: ({ children }) => (
-                                          <ul className="my-1.5 list-disc space-y-1 pl-4">{children}</ul>
-                                        ),
-                                        ol: ({ children }) => (
-                                          <ol className="my-1.5 list-decimal space-y-1 pl-4">{children}</ol>
-                                        ),
-                                        strong: ({ children }) => (
-                                          <strong className="font-black">{children}</strong>
-                                        ),
-                                      }}
-                                    >
-                                      {message.content}
-                                    </ReactMarkdown>
-                                  ) : (
-                                    <span className="animate-pulse text-muted-foreground">
-                                      正在理解条件并查询菜谱…
-                                    </span>
-                                  )
-                                ) : (
-                                  <span className="whitespace-pre-wrap">{message.content}</span>
+                              <div className="min-w-0 max-w-[86%] space-y-2">
+                                {message.role === "assistant" &&
+                                  message.trace &&
+                                  message.trace.length > 0 && (
+                                    <AgentExecutionTrace steps={message.trace} />
+                                  )}
+                                {(message.role === "user" ||
+                                  message.content ||
+                                  !message.trace?.length) && (
+                                  <div
+                                    className={cn(
+                                      "rounded-xl border px-3.5 py-2.5 text-xs leading-5 shadow-sm",
+                                      message.role === "user"
+                                        ? "rounded-br-sm border-primary/20 bg-primary/10 text-foreground"
+                                        : "rounded-bl-sm border-border/70 bg-white text-foreground"
+                                    )}
+                                  >
+                                    {message.role === "assistant" ? (
+                                      message.content ? (
+                                        <ReactMarkdown
+                                          remarkPlugins={[remarkGfm]}
+                                          components={{
+                                            p: ({ children }) => (
+                                              <p className="my-1.5 first:mt-0 last:mb-0">{children}</p>
+                                            ),
+                                            ul: ({ children }) => (
+                                              <ul className="my-1.5 list-disc space-y-1 pl-4">{children}</ul>
+                                            ),
+                                            ol: ({ children }) => (
+                                              <ol className="my-1.5 list-decimal space-y-1 pl-4">{children}</ol>
+                                            ),
+                                            strong: ({ children }) => (
+                                              <strong className="font-black">{children}</strong>
+                                            ),
+                                          }}
+                                        >
+                                          {message.content}
+                                        </ReactMarkdown>
+                                      ) : (
+                                        <span className="animate-pulse text-muted-foreground">
+                                          正在启动选菜工作流…
+                                        </span>
+                                      )
+                                    ) : (
+                                      <span className="whitespace-pre-wrap">{message.content}</span>
+                                    )}
+                                  </div>
                                 )}
                               </div>
                             </div>
@@ -448,12 +611,6 @@ export function RecipeFinderAgent({ compact = false }: RecipeFinderAgentProps = 
                           </div>
                         ))}
 
-                        {loading && (
-                          <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                            <LoaderCircle className="h-3.5 w-3.5 animate-spin text-primary" />
-                            Agent 正在思考并查询数据库…
-                          </div>
-                        )}
                         {error && (
                           <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-[11px] text-red-700">
                             {error}

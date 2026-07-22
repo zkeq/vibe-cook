@@ -3,11 +3,13 @@ import { persist } from "zustand/middleware";
 import type {
   RecipeFinderChatMessage,
   RecipeFinderRecommendation,
+  RecipeFinderTraceStep,
 } from "@/lib/recipe-finder-agent";
 
 export interface StoredRecipeFinderMessage extends RecipeFinderChatMessage {
   id: string;
   recommendations?: RecipeFinderRecommendation[];
+  trace?: RecipeFinderTraceStep[];
 }
 
 interface RecipeFinderAgentState {

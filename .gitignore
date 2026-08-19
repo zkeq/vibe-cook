@@ -43,3 +43,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# leftover editor / backup files
+*.backup.tsx
+*.backup.ts
+*.bak

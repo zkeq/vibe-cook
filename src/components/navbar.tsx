@@ -11,7 +11,6 @@ import { useState, useEffect, useRef } from "react";
 import recipeAPI from "@/services/recipe-api";
 import type { RecipeSummary } from "@/lib/types";
 import { RecipeFinderAgent } from "@/components/home/recipe-finder-agent";
-import { GithubStarButton } from "@/components/github-star-button";
 
 const navItems = [
   { href: "/", label: "食谱", icon: BookOpen },
@@ -81,15 +80,12 @@ export function Navbar({ onMenuClick, showMenuButton = false }: NavbarProps = {}
     >
       <div className="mx-auto flex h-full max-w-7xl items-center justify-between gap-4 px-4">
         {/* Logo */}
-        <div className="flex flex-shrink-0 items-center gap-2">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-xl bg-primary text-white shadow-sm">
-              <ChefHat className="h-4 w-4" />
-            </span>
-            <span className="hidden text-base font-bold tracking-tight sm:inline">Vibe Cook</span>
-          </Link>
-          <GithubStarButton compact className="hidden lg:inline-flex" />
-        </div>
+        <Link href="/" className="flex flex-shrink-0 items-center gap-2">
+          <span className="grid h-8 w-8 place-items-center rounded-xl bg-primary text-white shadow-sm">
+            <ChefHat className="h-4 w-4" />
+          </span>
+          <span className="hidden text-base font-bold tracking-tight sm:inline">Vibe Cook</span>
+        </Link>
 
         {/* 搜索框 */}
         <div ref={searchRef} className="relative flex max-w-md flex-1">
@@ -185,11 +181,12 @@ export function Navbar({ onMenuClick, showMenuButton = false }: NavbarProps = {}
           })}
         </nav>
 
-        {/* 手机端：开源 Star + 首页 AI 选菜 */}
-        <div className="flex shrink-0 items-center gap-1.5 lg:hidden">
-          <GithubStarButton compact />
-          {pathname === "/" && <RecipeFinderAgent compact />}
-        </div>
+        {/* 首页 AI 选菜 - 手机端右上角 */}
+        {pathname === "/" && (
+          <div className="shrink-0 lg:hidden">
+            <RecipeFinderAgent compact />
+          </div>
+        )}
 
         {/* 移动端菜单按钮 */}
         {showMenuButton && (

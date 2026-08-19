@@ -4,6 +4,7 @@ import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const GITHUB_REPO_URL = "https://github.com/zkeq/vibe-cook";
+export const CNB_REPO_URL = "https://cnb.cool/onmicrosoft/vibe-cook/frontend";
 
 function GithubMark({ className }: { className?: string }) {
   return (
@@ -25,21 +26,31 @@ export function GithubStarButton({
   compact?: boolean;
   className?: string;
 }) {
+  const size = compact ? "text-xs" : "text-[13px]";
+
   return (
-    <a
-      href={GITHUB_REPO_URL}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label="GitHub 开源，去点 Star"
-      className={cn(
-        "inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground",
-        compact ? "text-xs" : "text-[13px]",
-        className
-      )}
-    >
-      <GithubMark className={compact ? "h-3.5 w-3.5" : "h-3.5 w-3.5"} />
-      <span>{compact ? "Star" : "开源 · Star"}</span>
-      <Star className={cn("fill-current opacity-70", compact ? "h-3 w-3" : "h-3 w-3")} />
-    </a>
+    <span className={cn("inline-flex items-center gap-1.5", size, className)}>
+      <a
+        href={GITHUB_REPO_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="GitHub 开源，去点 Star"
+        className="inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <GithubMark className="h-3.5 w-3.5" />
+        <span>{compact ? "Star" : "开源 · Star"}</span>
+        <Star className="h-3 w-3 fill-current opacity-70" />
+      </a>
+      <span className="text-muted-foreground/50">·</span>
+      <a
+        href={CNB_REPO_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="CNB 开源，去点 Star"
+        className="inline-flex items-center gap-1 font-medium text-primary transition-colors hover:text-accent"
+      >
+        CNB · Star
+      </a>
+    </span>
   );
 }

@@ -2,6 +2,7 @@
 
 import { motion } from "motion/react";
 import { ChefHat } from "lucide-react";
+import { GithubStarButton } from "@/components/github-star-button";
 
 export function HeroLeft() {
   return (
@@ -18,10 +19,13 @@ export function HeroLeft() {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.7 }}
-        className="flex flex-col items-center gap-1 lg:items-start"
+        className="flex flex-col items-center gap-3 lg:items-start"
       >
-        <span className="text-4xl font-black tracking-tight text-foreground">Vibe Cook</span>
-        <span className="text-sm font-medium uppercase tracking-widest text-muted-foreground">跟着做就会</span>
+        <div className="flex flex-col items-center gap-1 lg:items-start">
+          <span className="text-4xl font-black tracking-tight text-foreground">Vibe Cook</span>
+          <span className="text-sm font-medium uppercase tracking-widest text-muted-foreground">跟着做就会</span>
+        </div>
+        <GithubStarButton />
       </motion.div>
     </div>
   );

@@ -24,6 +24,23 @@
   <a href="https://github.com/Anduin2017/HowToCook">菜谱来源 HowToCook</a>
 </p>
 
+<table>
+<tr>
+<td>
+
+**📦 开放数据集** · [The Unlicense](https://unlicense.org)（与 HowToCook 相同）
+
+结构化菜谱 JSON + 配图，**允许二次开发（含商用）**。图片字段为相对路径，自行拼接。
+
+- JSON / 索引：[`vibe-cook-backend/dataset`](https://github.com/zkeq/vibe-cook-backend/tree/main/dataset)（`markdown_path` 对 HowToCook，`json_path` 对本数据集）
+- 配图原图（Git LFS）：[`dataset` 分支](https://github.com/zkeq/vibe-cook-backend/tree/dataset)
+
+应用程序代码仍为 BUSL-1.1，见文末许可。
+
+</td>
+</tr>
+</table>
+
 ---
 
 ## ✨ 它能做什么

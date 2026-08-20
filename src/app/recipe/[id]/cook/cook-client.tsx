@@ -90,7 +90,7 @@ export function CookClient({ recipe }: CookClientProps) {
 
   // 步骤正计时状态
   const [stepTimeElapsed, setStepTimeElapsed] = useState(0);
-  const [isStepTimerRunning, setIsStepTimerRunning] = useState(false);
+  const [isStepTimerRunning, setIsStepTimerRunning] = useState(true);
 
   // 侧边栏拖动相关
   const [sidebarWidth, setSidebarWidth] = useState(320);
@@ -305,10 +305,10 @@ export function CookClient({ recipe }: CookClientProps) {
     return () => clearInterval(timer);
   }, [startTime]);
 
-  // 当步骤切换时，重置步骤计时
+  // 当步骤切换时，重置本步耗时并自动开始，免去每次手动点开始
   useEffect(() => {
-    setIsStepTimerRunning(false);
     setStepTimeElapsed(0);
+    setIsStepTimerRunning(true);
   }, [currentStep]);
 
   // TTS 朗读当前步骤

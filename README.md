@@ -128,7 +128,13 @@ edgeone makers dev
 
 ## 📄 许可
 
-本项目代码开源协议为 **[Business Source License 1.1](./LICENSE)** © Zkeq  
-菜谱原文 **The Unlicense**（HowToCook）
+自本版本起，代码采用 **[Business Source License 1.1](./LICENSE)** © Zkeq。
+
+- 可以查看、修改、再分发，以及**非生产**使用（学习、本地跑、评测）
+- **禁止**将本软件或其修改版上架任何应用商店，**禁止**出售或作为商业产品对外提供
+- 生产使用（含上架、售卖、对外提供服务）须向权利人取得商业授权：`admin@icodeq.com`
+- 本版本自 **2030-08-19** 起改为 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+
+菜谱原文来自 [HowToCook](https://github.com/Anduin2017/HowToCook)（The Unlicense），不受本仓库 BSL 约束。
 
 如果这个项目让你今晚真的下厨了，欢迎 Star ⭐

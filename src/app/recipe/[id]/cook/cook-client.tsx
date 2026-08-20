@@ -104,6 +104,7 @@ export function CookClient({ recipe }: CookClientProps) {
   const sidebarRef = useRef<HTMLElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const stepImageContainerRef = useRef<HTMLDivElement>(null);
+  const mobileStepImageContainerRef = useRef<HTMLDivElement>(null);
 
   // 使用全局状态管理份数（与详情页同步）
   const {
@@ -206,17 +207,23 @@ export function CookClient({ recipe }: CookClientProps) {
   console.log('🍳 Cook Mode - Recipe Servings:', recipe.servings);
   console.log('🍳 Cook Mode - Global Servings for this recipe:', servings);
 
-  // Fancybox 步骤图放大
+  // Fancybox 步骤图放大（桌面 / 移动端各绑一份，避免手机点图变成打开原图链接）
   useEffect(() => {
-    const container = stepImageContainerRef.current;
-    if (!container) return;
-    NativeFancybox.bind(container, "[data-fancybox]", {
+    const containers = [stepImageContainerRef.current, mobileStepImageContainerRef.current].filter(
+      (el): el is HTMLDivElement => Boolean(el)
+    );
+    const options = {
       Toolbar: {
         display: { left: [], middle: [], right: ["zoom", "fullscreen", "close"] },
       },
-    } as any);
+    } as any;
+    for (const container of containers) {
+      NativeFancybox.bind(container, "[data-fancybox]", options);
+    }
     return () => {
-      NativeFancybox.unbind(container);
+      for (const container of containers) {
+        NativeFancybox.unbind(container);
+      }
       NativeFancybox.close();
     };
   }, []);
@@ -599,18 +606,20 @@ export function CookClient({ recipe }: CookClientProps) {
                       className="flex flex-col items-center justify-center h-full w-full p-4 lg:p-6 z-10"
                     >
                       {currentStepData.image ? (
-                        <a
-                          data-fancybox="cook-steps"
-                          href={currentStepData.image}
+                        <button
+                          type="button"
+                          data-fancybox="cook-steps-desktop"
+                          data-src={currentStepData.image}
                           data-caption={`步骤 ${currentStep + 1}：${currentStepData.title}`}
-                          className="block h-full w-full"
+                          className="block h-full w-full p-0 border-0 bg-transparent cursor-zoom-in"
+                          aria-label="放大查看步骤图"
                         >
                           <img
                             src={currentStepData.image}
                             alt={currentStepData.title}
-                            className="h-full w-full object-contain rounded-xl cursor-zoom-in"
+                            className="h-full w-full object-contain rounded-xl pointer-events-none"
                           />
-                        </a>
+                        </button>
                       ) : (
                         // 无图时的 ChefHat 图标及大字标题
                         <div className="text-center">
@@ -1075,7 +1084,7 @@ export function CookClient({ recipe }: CookClientProps) {
           <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-6 min-h-0">
 
             {/* 2.1 步骤展示图 (Image or illustration) */}
-            <div className="w-full aspect-video md:aspect-[2/1] rounded-2xl border border-border bg-white flex items-center justify-center overflow-hidden relative shadow-sm shrink-0">
+            <div ref={mobileStepImageContainerRef} className="w-full aspect-video md:aspect-[2/1] rounded-2xl border border-border bg-white flex items-center justify-center overflow-hidden relative shadow-sm shrink-0">
               <div className="absolute inset-0 opacity-15 pointer-events-none"
                 style={{
                   backgroundImage: "radial-gradient(circle, #e0e0e0 1.2px, transparent 1.2px)",
@@ -1092,18 +1101,20 @@ export function CookClient({ recipe }: CookClientProps) {
                   className="flex items-center justify-center h-full w-full p-2 z-10"
                 >
                   {currentStepData.image ? (
-                    <a
-                      data-fancybox="cook-steps"
-                      href={currentStepData.image}
+                    <button
+                      type="button"
+                      data-fancybox="cook-steps-mobile"
+                      data-src={currentStepData.image}
                       data-caption={`步骤 ${currentStep + 1}：${currentStepData.title}`}
-                      className="block h-full w-full"
+                      className="block h-full w-full p-0 border-0 bg-transparent cursor-zoom-in"
+                      aria-label="放大查看步骤图"
                     >
                       <img
                         src={currentStepData.image}
                         alt={currentStepData.title}
-                        className="h-full w-full object-contain rounded-xl cursor-zoom-in"
+                        className="h-full w-full object-contain rounded-xl pointer-events-none"
                       />
-                    </a>
+                    </button>
                   ) : (
                     <div className="text-center py-6">
                       <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-orange-50/50 border border-orange-100 shadow-sm mb-2.5">

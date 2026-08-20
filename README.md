@@ -128,7 +128,7 @@ edgeone makers dev
 
 ## 📄 许可
 
-自本版本起，代码采用 **[Business Source License 1.1](./LICENSE)** © Zkeq。
+本项目代码开源协议为 **[Business Source License 1.1](./LICENSE)** © Zkeq。
 
 - 可以查看、修改、再分发，以及**非生产**使用（学习、本地跑、评测）
 - **禁止**将本软件或其修改版上架任何应用商店，**禁止**出售或作为商业产品对外提供

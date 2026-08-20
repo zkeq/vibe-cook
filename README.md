@@ -28,14 +28,12 @@
 <tr>
 <td>
 
-**📦 开放数据集** · [The Unlicense](https://unlicense.org)（与 HowToCook 相同）
+**📦 回馈社区的开放数据集** · [The Unlicense](https://unlicense.org)
 
-结构化菜谱 JSON + 配图，**允许二次开发（含商用）**。图片字段为相对路径，自行拼接。
+本项目的数据来自社区的 [HowToCook](https://github.com/Anduin2017/HowToCook)。做 App 的过程中，我们把原文 Markdown 做成了结构化 JSON，并为每道菜生成了配图。数据源于社区，便以与上游相同的协议交还给社区——欢迎二次开发（含商用）。
 
 - JSON / 索引：[`vibe-cook-backend/dataset`](https://github.com/zkeq/vibe-cook-backend/tree/main/dataset)（`markdown_path` 对 HowToCook，`json_path` 对本数据集）
 - 配图原图（Git LFS）：[`dataset` 分支](https://github.com/zkeq/vibe-cook-backend/tree/dataset)
-
-应用程序代码仍为 BUSL-1.1，见文末许可。
 
 </td>
 </tr>
@@ -152,12 +150,6 @@ edgeone makers dev
 - 生产使用（含上架、售卖、对外提供服务）须向权利人取得商业授权：`admin@icodeq.com`
 - 本版本自 **2030-08-19** 起改为 [GNU GPL v2 或更高版本](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
 
-**结构化菜谱与配图**采用 **[The Unlicense](https://unlicense.org)**，与 HowToCook 相同，可用于二次开发（含商用）。
-
-- JSON / 索引：[`vibe-cook-backend/dataset`](https://github.com/zkeq/vibe-cook-backend/tree/main/dataset)
-- 配图原图（Git LFS）：[`dataset` 分支](https://github.com/zkeq/vibe-cook-backend/tree/dataset)
-- `index.json` 中 `markdown_path` 对应 HowToCook 原路径，`json_path` 对应本数据集；图片字段为相对路径，自行拼接
-
-HowToCook 原文同样为 The Unlicense。
+**结构化菜谱与配图**采用 **[The Unlicense](https://unlicense.org)**，与 HowToCook 相同，见文首数据集卡片。
 
 如果这个项目让你今晚真的下厨了，欢迎 Star ⭐

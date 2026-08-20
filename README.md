@@ -135,6 +135,6 @@ edgeone makers dev
 - 生产使用（含上架、售卖、对外提供服务）须向权利人取得商业授权：`admin@icodeq.com`
 - 本版本自 **2030-08-19** 起改为 [GNU GPL v2 或更高版本](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
 
-**菜谱数据与配图**在 [`vibe-cook-backend/dataset`](https://github.com/zkeq/vibe-cook-backend/tree/main/dataset)，采用 **[The Unlicense](https://unlicense.org)**，与 [HowToCook](https://github.com/Anduin2017/HowToCook) 相同。含全量 JSON（`dataset/json/recipes.json`）、单份 JSON，以及 Git LFS 原图。
+**菜谱 JSON** 在 [`vibe-cook-backend/dataset`](https://github.com/zkeq/vibe-cook-backend/tree/main/dataset)；**配图原图**（约 6GB）在 [`dataset` 分支](https://github.com/zkeq/vibe-cook-backend/tree/dataset)。均采用 **[The Unlicense](https://unlicense.org)**，与 [HowToCook](https://github.com/Anduin2017/HowToCook) 相同。跑后端不必下载原图。
 
 如果这个项目让你今晚真的下厨了，欢迎 Star ⭐

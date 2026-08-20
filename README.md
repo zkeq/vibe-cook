@@ -30,7 +30,7 @@
 
 **📦 回馈社区的开放数据集** · [The Unlicense](https://unlicense.org)
 
-本项目的数据来自社区的 [HowToCook](https://github.com/Anduin2017/HowToCook)。做 App 的过程中，我们把原文 Markdown 做成了结构化 JSON，并为每道菜生成了配图。数据源于社区，便以与上游相同的协议交还给社区——欢迎二次开发（含商用）。
+本项目的数据来自社区的 [HowToCook](https://github.com/Anduin2017/HowToCook)。做 App 的过程中，我们把原文 Markdown 做成了结构化 JSON，并为每道菜生成了配图。数据源于社区，便以与上游相同的协议交还给社区——欢迎二次开发以及补充（含商用）。
 
 - JSON / 索引：[`vibe-cook-backend/dataset`](https://github.com/zkeq/vibe-cook-backend/tree/main/dataset)（`markdown_path` 对 HowToCook，`json_path` 对本数据集）
 - 配图原图（Git LFS）：[`dataset` 分支](https://github.com/zkeq/vibe-cook-backend/tree/dataset)

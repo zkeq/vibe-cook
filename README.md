@@ -21,6 +21,8 @@
   ·
   <a href="#-它能做什么">功能</a>
   ·
+  <a href="#-开放数据">开放数据</a>
+  ·
   <a href="https://github.com/Anduin2017/HowToCook">菜谱来源 HowToCook</a>
 </p>
 
@@ -121,6 +123,36 @@ edgeone makers dev
 - EdgeOne Makers：仓库连到 Makers 项目后 `edgeone makers deploy`
 - 后端单独部署 → [vibe-cook-backend](https://github.com/zkeq/vibe-cook-backend)
 
+## 📂 开放数据
+
+Vibe Cook 把 HowToCook 的 Markdown 做成了结构化菜谱（分步 JSON + 封面 / 全解图 / 步骤图）。**数据和配图单独开放**，协议与上游 [HowToCook](https://github.com/Anduin2017/HowToCook) 相同：**[The Unlicense](https://unlicense.org)**（公共领域）。
+
+欢迎基于这份数据做二次开发：自己的网站、小程序、API、训练、本地工具都可以，包括商业使用。不需要再走作者的对象存储。
+
+| 你要什么 | 在哪 |
+| --- | --- |
+| 结构化 JSON、索引、SQLite | [`vibe-cook-backend/dataset`](https://github.com/zkeq/vibe-cook-backend/tree/main/dataset)（`main` 分支上的文件夹） |
+| 配图原图（Git LFS，未压缩） | 同一仓库的 [`dataset` 分支](https://github.com/zkeq/vibe-cook-backend/tree/dataset) |
+
+```bash
+# 结构化数据（体积小）
+git clone https://github.com/zkeq/vibe-cook-backend.git
+# 文件在 dataset/json/
+
+# 连原图一起要（约 6GB）
+git clone --branch dataset --single-branch https://github.com/zkeq/vibe-cook-backend.git vibe-cook-dataset
+cd vibe-cook-dataset && git lfs pull
+```
+
+- 全量：`dataset/json/recipes.json`
+- 单份：`dataset/json/recipes/<id>.json`
+- 索引：`dataset/json/index.json`  
+  - `markdown_path`：对应 HowToCook 原仓库路径，如 `dishes/aquatic/咖喱炒蟹.md`  
+  - `json_path`：本数据集里的 JSON 文件
+- 图片字段只存相对路径（`ai-generated/...`、`overview/...`、`steps/...`），自己拼 CDN 或拼本地 `images/` 目录
+
+应用程序（本仓库的 Next.js 前端、以及后端服务代码）**不是** Unlicense，见下一节。
+
 ## 🙏 致谢
 
 - 菜谱：[Anduin2017/HowToCook](https://github.com/Anduin2017/HowToCook) — 没有这份指南就没有 Vibe Cook
@@ -128,13 +160,21 @@ edgeone makers dev
 
 ## 📄 许可
 
-**应用程序代码**采用 **[Business Source License 1.1](./LICENSE)** © Zkeq。
+分两部分，不要混在一起：
 
-- 可以查看、修改、再分发，以及**非生产**使用（学习、本地跑、评测）
-- **禁止**将本软件或其修改版上架任何应用商店，**禁止**出售或作为商业产品对外提供
-- 生产使用（含上架、售卖、对外提供服务）须向权利人取得商业授权：`admin@icodeq.com`
+### 1. 应用程序代码（本仓库 + 后端代码）
+
+**[Business Source License 1.1](./LICENSE)** © Zkeq
+
+- 可以查看、修改、再分发，以及非生产使用（学习、本地跑、评测）
+- **不可以**把 Vibe Cook 这套 App（或其修改版）上架应用商店、出售，或当成你的商业产品对外提供
+- 若要生产使用，请联系 `admin@icodeq.com` 取得商业授权
 - 本版本自 **2030-08-19** 起改为 [GNU GPL v2 或更高版本](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
 
-**菜谱 JSON** 在 [`vibe-cook-backend/dataset`](https://github.com/zkeq/vibe-cook-backend/tree/main/dataset)；**配图原图**（约 6GB）在 [`dataset` 分支](https://github.com/zkeq/vibe-cook-backend/tree/dataset)。均采用 **[The Unlicense](https://unlicense.org)**，与 [HowToCook](https://github.com/Anduin2017/HowToCook) 相同。跑后端不必下载原图。
+### 2. 菜谱数据与配图
+
+**[The Unlicense](https://unlicense.org)**，与 HowToCook 一致。
+
+任何人都可以自由复制、修改、发布、使用、出售或再分发这些数据和图片，无论是否商业目的。用它们二次开发自己的产品，不需要再向 Vibe Cook 要授权。约束的是「不要把我这套 App 拿去上架/收费」，不是「数据不能用」。
 
 如果这个项目让你今晚真的下厨了，欢迎 Star ⭐

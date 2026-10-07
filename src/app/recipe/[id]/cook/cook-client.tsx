@@ -369,7 +369,7 @@ export function CookClient({ recipe }: CookClientProps) {
         style={{ width: isDragging ? `${tempWidth}px` : `${sidebarWidth}px` }}
       >
         {/* 菜名和简介 */}
-        <div className="p-5 border-b border-border bg-white flex gap-3">
+        <div className="native-cook-sidebar-header p-5 border-b border-border bg-white flex gap-3">
           {/* 成品图 */}
           {recipe.cover_image && (
             <div className="w-16 h-16 shrink-0 rounded-lg overflow-hidden bg-neutral-100 border border-border">
@@ -472,7 +472,7 @@ export function CookClient({ recipe }: CookClientProps) {
           />
 
           {/* 桌面端：顶部指令横幅 */}
-          <div className="flex min-h-24 border-b-2 border-border bg-gradient-to-br from-white via-neutral-50/80 to-white items-center justify-between px-8 py-4 z-10 shrink-0 shadow-md">
+          <div className="native-cook-action-header flex min-h-24 border-b-2 border-border bg-gradient-to-br from-white via-neutral-50/80 to-white items-center justify-between px-8 py-4 z-10 shrink-0 shadow-md">
             {/* 左侧：状态指示器 + 行动指令 */}
             <div className="flex items-center gap-6 min-w-0 flex-1">
               {/* 进度状态 */}
@@ -965,7 +965,7 @@ export function CookClient({ recipe }: CookClientProps) {
           
           {/* 1. 移动端顶栏 (Header) */}
           <header className="bg-white border-b border-border z-20 shrink-0 shadow-sm">
-            <div className="flex items-center justify-between px-4 py-3">
+            <div className="native-cook-compact-header flex items-center justify-between px-4 py-3">
               {/* 返回/退出按钮 */}
               <Link
                 href={`/recipe/${recipe.id}`}

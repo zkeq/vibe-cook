@@ -20,7 +20,7 @@ html[data-desktop] header.fixed {
   padding-right: var(--mygo-titlebar-inset-right, 0px);
 }
 html[data-desktop] header.fixed :is(a, button, input) { --app-region: no-drag; }
-/* The cooking view has no site header: reserve a drag strip for the native buttons. */
+/* The shopping view reserves a drag strip above its header. */
 .native-window-strip {
   height: var(--mygo-titlebar-height, 0px);
   --app-region: drag;
@@ -40,5 +40,29 @@ html:has(.native-cook-viewport), body:has(.native-cook-viewport) {
   min-height: 0;
 }
 html[data-desktop] .native-cook-viewport {
-  top: calc(var(--native-safe-top) + var(--mygo-titlebar-height, 0px));
+  inset: 0;
+}
+html[data-desktop]:has(.native-cook-viewport),
+html[data-desktop]:has(.native-cook-viewport) :is(body, #root) {
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+/* Use the existing cooking headers for dragging, with horizontal room for controls. */
+html[data-desktop] :is(.native-cook-sidebar-header, .native-cook-action-header, .native-cook-compact-header) {
+  --app-region: drag;
+}
+html[data-desktop] :is(.native-cook-sidebar-header, .native-cook-action-header, .native-cook-compact-header) :is(a, button, input) {
+  --app-region: no-drag;
+}
+html[data-desktop] .native-cook-sidebar-header {
+  padding-left: calc(1.25rem + var(--mygo-titlebar-inset-left, 0px));
+}
+html[data-desktop] .native-cook-action-header {
+  padding-right: calc(2rem + var(--mygo-titlebar-inset-right, 0px));
+}
+html[data-desktop] .native-cook-compact-header {
+  padding-left: calc(1rem + var(--mygo-titlebar-inset-left, 0px));
+  padding-right: calc(1rem + var(--mygo-titlebar-inset-right, 0px));
 }

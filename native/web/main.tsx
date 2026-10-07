@@ -43,7 +43,8 @@ function NativeLifecycle() {
 function RecipeFrame() {
   const { pathname } = useLocation();
   const fullScreen = /\/(cook|shopping)$/.test(pathname);
-  return <>{fullScreen && isMyGo() && <div className="native-window-strip" />}<div className={fullScreen ? "" : "pt-14"}><RecipeLayout><Outlet /></RecipeLayout></div></>;
+  const shopping = pathname.endsWith("/shopping");
+  return <>{shopping && isMyGo() && <div className="native-window-strip" />}<div className={fullScreen ? "" : "pt-14"}><RecipeLayout><Outlet /></RecipeLayout></div></>;
 }
 
 function ClientApp() {

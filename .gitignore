@@ -48,3 +48,26 @@ next-env.d.ts
 *.backup.tsx
 *.backup.ts
 *.bak
+
+# Native client build output
+native/dist/
+native/release/
+native/desktop/frontend/
+native/desktop/generated/
+native/desktop/.mygo/
+native/desktop/*.syso
+native/android/.gradle/
+native/android/build/
+native/android/app/build/
+native/android/local.properties
+native/android/capacitor-cordova-android-plugins/
+native/android/app/src/main/assets/public/
+native/android/app/src/main/assets/capacitor*.json
+native/ios/App/App/public/
+native/ios/App/App/capacitor.config.json
+native/ios/App/CapApp-SPM/.build/
+
+*.jks
+*.keystore
+*.p12
+*.mobileprovision

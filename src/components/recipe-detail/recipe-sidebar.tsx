@@ -1,5 +1,6 @@
 "use client";
 
+import { appFetch } from "@/lib/http";
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
@@ -85,7 +86,7 @@ export function RecipeSidebar({
     const loadRecipes = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(
+        const response = await appFetch(
           `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/recipes?page=${currentPage}&limit=${LIMIT_PER_PAGE}${
             selectedCategory !== '全部' ? `&category=${selectedCategory}` : ''
           }`
@@ -112,7 +113,7 @@ export function RecipeSidebar({
       if (!currentId) return;
 
       try {
-        const response = await fetch(
+        const response = await appFetch(
           `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/recipes/${currentId}/page${
             selectedCategory !== '全部' ? `?category=${selectedCategory}` : ''
           }`

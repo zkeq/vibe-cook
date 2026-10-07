@@ -1,5 +1,6 @@
 "use client";
 
+import { appFetch } from "@/lib/http";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import recipeAPI from "@/services/recipe-api";
@@ -46,7 +47,7 @@ export function HeroRight({ interval = 2800 }: { interval?: number }) {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/recipes/stats`);
+        const response = await appFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/recipes/stats`);
         const data = await response.json();
 
         console.log('HeroRight stats response:', data);

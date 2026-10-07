@@ -1,5 +1,6 @@
 "use client";
 
+import { appFetch } from "@/lib/http";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import Image from "next/image";
@@ -158,7 +159,7 @@ export function IntroOverlay() {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/recipes/stats`);
+        const response = await appFetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/recipes/stats`);
         const data = await response.json();
         if (data.total) {
           setLocalTotal(data.total);

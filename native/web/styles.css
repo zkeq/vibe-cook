@@ -1,0 +1,22 @@
+@import "../../src/app/globals.css";
+@source "../../src";
+@source ".";
+
+html, body, #root { min-height: 100%; }
+/* Fixed overlays and navigation must leave room for the mobile status bar. */
+body { padding-top: 0; }
+#root { padding-top: env(safe-area-inset-top); }
+header.fixed { top: env(safe-area-inset-top); }
+/* MyGo's native buttons sit over the page instead of a separate title bar. */
+html[data-desktop] header.fixed {
+  --app-region: drag;
+  padding-left: var(--mygo-titlebar-inset-left, 0px);
+  padding-right: var(--mygo-titlebar-inset-right, 0px);
+}
+html[data-desktop] header.fixed :is(a, button, input) { --app-region: no-drag; }
+/* The cooking view has no site header: reserve a drag strip for the native buttons. */
+.native-window-strip {
+  height: var(--mygo-titlebar-height, 0px);
+  --app-region: drag;
+  background: transparent;
+}

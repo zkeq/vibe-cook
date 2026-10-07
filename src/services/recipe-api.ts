@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/http";
 import type { Recipe, RecipeSummary } from '@/lib/types';
 
 // API 基础配置
@@ -7,7 +8,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/a
 async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
 
-  const response = await fetch(url, {
+  const response = await appFetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',

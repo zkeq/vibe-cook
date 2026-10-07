@@ -17,6 +17,8 @@
 <p align="center">
   <a href="https://cook.corerevive.cn">👉 打开 Vibe Cook</a>
   ·
+  <a href="https://github.com/zkeq/vibe-cook/releases/latest">下载客户端</a>
+  ·
   <a href="#-本地开发">本地开发</a>
   ·
   <a href="#-它能做什么">功能</a>
@@ -78,7 +80,7 @@ HowToCook Markdown  →  LLM 结构化（JSON 分步 + 生图）  →  后端下
 | 样式 | Tailwind CSS v4 + shadcn/ui |
 | 动效 | motion |
 | 状态 | Zustand |
-| 交付 | PWA（主屏、全屏、Wake Lock） |
+| 交付 | PWA + MyGo 桌面客户端 + Capacitor 移动客户端 |
 | Agent | EdgeOne Makers（选菜 / 厨师） |
 | 后端 | [FastAPI + SQLite](https://github.com/zkeq/vibe-cook-backend) |
 
@@ -134,6 +136,93 @@ edgeone makers dev
 - 静态 / Node：`npm run build`
 - EdgeOne Makers：仓库连到 Makers 项目后 `edgeone makers deploy`
 - 后端单独部署 → [vibe-cook-backend](https://github.com/zkeq/vibe-cook-backend)
+
+## 📱 原生客户端
+
+[下载最新 Release](https://github.com/zkeq/vibe-cook/releases/latest) · [查看自动构建](https://github.com/zkeq/vibe-cook/actions/workflows/native-release.yml)
+
+客户端把本仓库的前端打包到应用中，复用首页、菜谱详情、购物清单、烹饪和 AI 组件。桌面使用 [MyGo](https://mygo.egoist.dev/docs/getting-started)，移动端使用 [Capacitor](https://capacitorjs.com/docs)。Vite 单独构建客户端，原有 Next.js 网站继续使用 `npm run build`；菜谱通过动态路由加载，新增菜谱不需要重新打包。
+
+| 平台 | 构建产物 | 安装与签名 |
+| --- | --- | --- |
+| macOS 12+ | Universal DMG / App ZIP，兼容 Intel 和 Apple Silicon | DMG 中拖到 Applications；使用 ad-hoc 签名，尚未 Apple 公证 |
+| Windows 10+ x64 | Setup EXE | 运行安装程序；尚未配置发布者签名，首次运行可能出现系统提示 |
+| Android 7+ | APK | 默认 debug APK 可直接安装；正式发布可配置下方签名 Secrets |
+| iOS / iPadOS 16.4+ | 未签名 IPA / Xcode Archive ZIP | 需要自己的 Apple 开发团队、证书和描述文件签名；不能直接安装或上传 TestFlight / App Store |
+
+每个 Release 提供 `SHA256SUMS.txt`。发布构建产物不改变本仓库的 BUSL-1.1 许可范围。
+
+### 线上接口
+
+客户端启动不需要本地后端。默认连接现有服务，菜谱和 AI 需要联网：
+
+- 菜谱：`https://cook-api.corerevive.cn/api/v1`
+- AI 主厨：`https://cook.corerevive.cn/recipe-chef`
+- AI 选菜：`https://cook.corerevive.cn/recipe-finder`
+
+桌面通过 MyGo 原生 HTTP 读取流式 AI 回复，移动端通过 Capacitor 原生 HTTP 收到完整回复后显示。前端构建不包含 AI 服务端密钥。`NATIVE_API_URL` 可在构建时覆盖菜谱 API；桌面 HTTP 的域名白名单在 `native/desktop/main.go`，改域名时需同步更新。
+
+### 本地启动与打包
+
+使用 Node.js 22+，先运行 `npm ci`。客户端预览固定使用 **4178** 端口（严格检测占用），Next.js 网站仍使用 3000。
+
+```bash
+# 仅预览客户端前端
+npm run native:dev
+
+# macOS 桌面开发，需要 Go 1.27.1+ 和 Xcode Command Line Tools
+npm run desktop:dev
+
+# 在 Mac 上构建 macOS Universal + Windows x64
+# 需要 Go 1.27.1+、完整 Xcode 和 NSIS（brew install makensis）
+npm run desktop:build
+```
+
+Go 默认从 PATH 查找，也可通过 `VIBE_COOK_GO` 指定可执行文件。桌面产物位于 `native/release/darwin-universal` 和 `native/release/windows-amd64`。
+
+```bash
+# Android：需要 Java 21、Android SDK API 36 / Build Tools 35
+# ANDROID_HOME 指向 SDK；Mac 默认自动查找 Android Studio 的 Java 和 SDK
+npm run android:build
+
+# iOS：只能在 Mac 上构建，需要 Xcode 26+ 和 CocoaPods
+npm run ios:build
+
+# 打开原生工程，在 IDE 内调试或配置自己的发布签名
+npm run mobile:sync
+npm run android:open
+npm run ios:open
+```
+
+移动端产物位于 `native/release/android` 和 `native/release/ios`。iOS 的 `VibeCook.xcarchive` 可在 Xcode 中使用自己的开发团队签名导出。SDK、依赖、构建产物及签名文件均不提交到 Git。
+
+### GitHub Actions 自动构建与 Release
+
+工作流 `.github/workflows/native-release.yml` 在推送 `main`、提交 PR 或手动运行时检查 TypeScript、客户端适配代码及 Web 构建，并构建四个平台，把安装包保存在 Actions Artifacts。推送 `v*` 标签后，所有平台构建成功才会创建 GitHub Release 并上传安装包与校验文件。
+
+发布新版本时更新 `package.json` 和锁文件的版本，再提交并推送标签：
+
+```bash
+npm version 0.1.1 --no-git-tag-version
+git add package.json package-lock.json
+git commit -m "chore: release 0.1.1"
+git tag v0.1.1
+git push github main
+git push github v0.1.1
+```
+
+上述命令使用本工作区的 `github` remote；普通 clone 只有 `origin` 时替换 remote 名称。构建脚本自动同步桌面、Android 和 iOS 的版本号；标签与 `package.json` 不一致会阻止发布。
+
+Android 默认提供 debug APK。要持续生成可升级的正式签名 APK，在仓库 Settings → Secrets and variables → Actions 设置：
+
+| Secret | 内容 |
+| --- | --- |
+| `ANDROID_KEYSTORE_BASE64` | 你自己的 keystore 文件 Base64 内容 |
+| `ANDROID_KEYSTORE_PASSWORD` | keystore 密码 |
+| `ANDROID_KEY_ALIAS` | 密钥别名 |
+| `ANDROID_KEY_PASSWORD` | 密钥密码 |
+
+本地正式签名使用对应的 `COOK_ANDROID_KEYSTORE`（文件路径）、`COOK_ANDROID_STORE_PASSWORD`、`COOK_ANDROID_KEY_ALIAS` 和 `COOK_ANDROID_KEY_PASSWORD` 环境变量。未配置 Android 发布签名时，各次 CI 的 debug 签名可能不同，升级安装需要先卸载旧包。Mac 公证、Windows 发布者签名和 iOS 分发签名需要另行配置自己的证书。
 
 ## 🙏 致谢
 

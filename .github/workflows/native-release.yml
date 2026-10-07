@@ -1,0 +1,139 @@
+name: Build native clients
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx eslint native/web native/vite.config.mts capacitor.config.ts src/lib/http.ts --max-warnings 0
+      - run: npm run build
+      - run: npm run native:build
+
+  desktop:
+    needs: check
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: native/desktop/go.mod
+          cache-dependency-path: native/desktop/go.sum
+      - run: npm ci
+      - run: brew install makensis
+      - run: npm run desktop:build
+      - name: Collect Mac and Windows packages
+        run: |
+          mkdir -p release-assets
+          VERSION=$(node -p 'require("./package.json").version')
+          cp "native/release/darwin-universal/Vibe Cook $VERSION.dmg" "release-assets/Vibe-Cook-$VERSION-macos-universal.dmg"
+          cp "native/release/windows-amd64/Vibe Cook Setup $VERSION.exe" "release-assets/Vibe-Cook-$VERSION-windows-x64-setup.exe"
+          ditto -c -k --sequesterRsrc --keepParent "native/release/darwin-universal/Vibe Cook.app" "release-assets/Vibe-Cook-$VERSION-macos-universal.zip"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: desktop
+          path: release-assets/*
+          if-no-files-found: error
+
+  android:
+    needs: check
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      COOK_ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      COOK_ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      COOK_ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - run: npm ci
+      - name: Install Android SDK packages
+        run: sdkmanager "platforms;android-36" "build-tools;35.0.0"
+      - name: Prepare optional release signing
+        if: env.ANDROID_KEYSTORE_BASE64 != ''
+        run: |
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/cook-release.jks"
+          echo "COOK_ANDROID_KEYSTORE=$RUNNER_TEMP/cook-release.jks" >> "$GITHUB_ENV"
+      - run: npm run android:build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: android
+          path: native/release/android/*.apk
+          if-no-files-found: error
+
+  ios:
+    needs: check
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: xcodebuild -version
+      - run: npm run ios:build
+      - name: Include archive for signing in Xcode
+        run: |
+          VERSION=$(node -p 'require("./package.json").version')
+          ditto -c -k --keepParent native/release/ios/VibeCook.xcarchive "native/release/ios/Vibe-Cook-$VERSION-ios-xcarchive.zip"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ios
+          path: |
+            native/release/ios/*.ipa
+            native/release/ios/*.zip
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [desktop, android, ios]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          path: release-assets
+          merge-multiple: true
+      - name: Create checksums
+        run: |
+          cd release-assets
+          sha256sum ./* > SHA256SUMS.txt
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: gh release create "$RELEASE_TAG" release-assets/* --verify-tag --title "Vibe Cook $RELEASE_TAG" --notes-file native/RELEASE_NOTES.md

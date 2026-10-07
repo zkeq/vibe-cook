@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/http";
 /**
  * FastAPI 后端客户端
  * base URL 走环境变量 NEXT_PUBLIC_API_BASE，默认本地 8000。
@@ -9,7 +10,7 @@ const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000/api/v1";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await appFetch(`${API_BASE}${path}`, {
     headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
     ...init,
   });

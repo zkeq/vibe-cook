@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/http";
 import type { Recipe } from "@/lib/types";
 
 export interface RecipeAgentChatMessage {
@@ -32,7 +33,7 @@ export async function askRecipeAgent(
   currentStepIndex?: number,
   onDelta?: (text: string) => void
 ): Promise<RecipeAgentResponse> {
-  const response = await fetch(getAgentEndpoint(), {
+  const response = await appFetch(getAgentEndpoint(), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

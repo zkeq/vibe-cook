@@ -1,3 +1,4 @@
+import { appFetch } from "@/lib/http";
 import { create } from 'zustand';
 import type { Recipe, RecipeSummary } from '@/lib/types';
 import { recipeAPI } from '@/services/recipe-api';
@@ -62,7 +63,7 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
       const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/recipes?page=${page}&limit=${LIMIT_PER_PAGE}${
         category ? `&category=${category}` : ''
       }`;
-      const response = await fetch(url);
+      const response = await appFetch(url);
       const data = await response.json();
 
       // 随机打乱菜谱列表

@@ -11,12 +11,20 @@ import RecipeLayout from "@/app/recipe/layout";
 import RecipePage from "@/app/recipe/[id]/page";
 import CookPage from "@/app/recipe/[id]/cook/page";
 import ShoppingPage from "@/app/recipe/[id]/shopping/page";
+import { NETWORK_RETRY_EVENT } from "./network-retry";
 import "./styles.css";
 
 function NativeLifecycle() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  useEffect(() => {
+    if (Capacitor.getPlatform() !== "ios") return;
+    const state = App.addListener("appStateChange", ({ isActive }) => {
+      if (isActive) window.dispatchEvent(new Event(NETWORK_RETRY_EVENT));
+    });
+    return () => { void state.then((handle) => handle.remove()); };
+  }, []);
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     const back = App.addListener("backButton", () => {

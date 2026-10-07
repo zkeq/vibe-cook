@@ -203,12 +203,12 @@ npm run ios:open
 发布新版本时更新 `package.json` 和锁文件的版本，再提交并推送标签：
 
 ```bash
-npm version 0.1.1 --no-git-tag-version
+npm version 0.1.2 --no-git-tag-version
 git add package.json package-lock.json
-git commit -m "chore: release 0.1.1"
-git tag v0.1.1
+git commit -m "chore: release 0.1.2"
+git tag v0.1.2
 git push github main
-git push github v0.1.1
+git push github v0.1.2
 ```
 
 上述命令使用本工作区的 `github` remote；普通 clone 只有 `origin` 时替换 remote 名称。构建脚本自动同步桌面、Android 和 iOS 的版本号；标签与 `package.json` 不一致会阻止发布。

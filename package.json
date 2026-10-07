@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "license": "BUSL-1.1",
   "scripts": {
@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "native:dev": "vite --config native/vite.config.mts",
+    "native:icons": "node native/scripts/icons.mjs",
     "native:build": "node native/scripts/version.mjs && vite build --config native/vite.config.mts",
     "native:preview": "vite preview --config native/vite.config.mts --host 127.0.0.1 --port 4178",
     "native:build:desktop": "npm run native:build && node native/scripts/copy-desktop.mjs",

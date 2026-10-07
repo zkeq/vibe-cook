@@ -79,7 +79,9 @@ jobs:
           java-version: "21"
       - run: npm ci
       - name: Install Android SDK packages
-        run: sdkmanager "platforms;android-36" "build-tools;35.0.0"
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;35.0.0'
       - name: Prepare optional release signing
         if: env.ANDROID_KEYSTORE_BASE64 != ''
         run: |

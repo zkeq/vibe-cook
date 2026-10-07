@@ -1,4 +1,7 @@
-name: Build native clients
+name: Client checks and releases
+run-name: >-
+  ${{ startsWith(github.ref, 'refs/tags/v') && format('Release {0}', github.ref_name) ||
+      github.event_name == 'workflow_dispatch' && 'Build client packages' || 'Check code' }}
 
 on:
   push:
@@ -10,10 +13,6 @@ on:
 
 permissions:
   contents: read
-
-concurrency:
-  group: native-${{ github.ref }}
-  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 jobs:
   check:
@@ -32,6 +31,7 @@ jobs:
       - run: npm run native:build
 
   desktop:
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     needs: check
     runs-on: macos-latest
     steps:
@@ -61,6 +61,7 @@ jobs:
           if-no-files-found: error
 
   android:
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     needs: check
     runs-on: ubuntu-latest
     env:
@@ -96,6 +97,7 @@ jobs:
           if-no-files-found: error
 
   ios:
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     needs: check
     runs-on: macos-latest
     steps:

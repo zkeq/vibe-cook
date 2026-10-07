@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Volume2, Mic2, Gauge } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { speech, speechErrorMessage, type SpeechVoice } from "@/lib/speech";
 
 export interface TtsSettings {
   rate: number;
@@ -17,13 +18,19 @@ export function loadTtsSettings(): TtsSettings {
   if (typeof window === "undefined") return { rate: 1.12, voiceURI: "" };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return { rate: 1.12, voiceURI: "", ...JSON.parse(raw) };
+    if (raw) {
+      const value = JSON.parse(raw);
+      return {
+        rate: typeof value?.rate === "number" && Number.isFinite(value.rate) ? Math.min(2, Math.max(0.5, value.rate)) : 1.12,
+        voiceURI: typeof value?.voiceURI === "string" ? value.voiceURI : "",
+      };
+    }
   } catch {}
   return { rate: 1.12, voiceURI: "" };
 }
 
 export function saveTtsSettings(s: TtsSettings) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch {}
 }
 
 interface Props {
@@ -43,20 +50,28 @@ const RATE_PRESETS = [
 ];
 
 export function TtsSettingsPanel({ open, onClose, settings, onChange }: Props) {
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [voices, setVoices] = useState<SpeechVoice[]>([]);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => { queueMicrotask(() => setMounted(true)); }, []);
 
   useEffect(() => {
     if (!open) return;
+    let active = true;
     const load = () => {
-      const vs = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith("zh"));
-      setVoices(vs);
+      setLoading(true);
+      setError("");
+      void speech.getVoices().then((voices) => {
+        if (active) setVoices(voices.filter((voice) => /^zh(-|_)/i.test(voice.lang)));
+      }).catch((error) => {
+        if (active) { setVoices([]); setError(speechErrorMessage(error)); }
+      }).finally(() => { if (active) setLoading(false); });
     };
+    const unsubscribe = speech.subscribeVoicesChanged(load);
     load();
-    window.speechSynthesis.onvoiceschanged = load;
-    return () => { window.speechSynthesis.onvoiceschanged = null; };
+    return () => { active = false; unsubscribe(); void speech.stop(); };
   }, [open]);
 
   const handleRate = (rate: number) => {
@@ -69,14 +84,12 @@ export function TtsSettingsPanel({ open, onClose, settings, onChange }: Props) {
     const next = { ...settings, voiceURI };
     onChange(next);
     saveTtsSettings(next);
-    // 预览
-    window.speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance("锅中加油，烧热后放入食材翻炒");
-    utter.lang = "zh-CN";
-    utter.rate = settings.rate;
-    const v = window.speechSynthesis.getVoices().find(x => x.voiceURI === voiceURI);
-    if (v) utter.voice = v;
-    window.speechSynthesis.speak(utter);
+    preview(next);
+  };
+
+  const preview = (options: TtsSettings) => {
+    setError("");
+    void speech.speak("锅中加油，烧热后放入食材翻炒", options).catch((error) => setError(speechErrorMessage(error)));
   };
 
   if (!mounted) return null;
@@ -159,6 +172,9 @@ export function TtsSettingsPanel({ open, onClose, settings, onChange }: Props) {
                 </div>
               </div>
 
+              <button onClick={() => preview(settings)} className="w-full rounded-xl border border-border py-2.5 text-xs font-bold text-primary">试听朗读</button>
+              {error && <p role="alert" className="text-xs text-red-600">{error}</p>}
+
               {/* 音色 */}
               {voices.length > 0 && (
                 <div>
@@ -192,9 +208,9 @@ export function TtsSettingsPanel({ open, onClose, settings, onChange }: Props) {
                 </div>
               )}
 
-              {voices.length === 0 && (
+              {!error && voices.length === 0 && (
                 <div className="text-center py-4 text-xs text-muted-foreground">
-                  当前设备无可用中文音色
+                  {loading ? "正在加载系统音色…" : "当前设备无可用中文音色，请检查系统语音设置。"}
                 </div>
               )}
             </div>

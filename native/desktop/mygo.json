@@ -1,7 +1,7 @@
 {
   "name": "Vibe Cook",
   "identifier": "cn.corerevive.cook",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "copyright": "© 2026 Zkeq",
   "devUrl": "http://127.0.0.1:4178",
   "devCommand": "npm --prefix ../.. run native:dev",

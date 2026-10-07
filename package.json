@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "license": "BUSL-1.1",
   "scripts": {
@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:native": "vitest run --config native/vitest.config.mts",
     "native:dev": "vite --config native/vite.config.mts",
     "native:icons": "node native/scripts/icons.mjs",
     "native:build": "node native/scripts/version.mjs && vite build --config native/vite.config.mts",
@@ -22,6 +23,7 @@
     "ios:build": "npm run native:build && cap sync ios && node native/scripts/mobile.mjs ios"
   },
   "dependencies": {
+    "@capacitor-community/text-to-speech": "8.0.2",
     "@capacitor/android": "^8.5.2",
     "@capacitor/app": "^8.1.2",
     "@capacitor/core": "^8.5.2",
@@ -52,8 +54,10 @@
     "@vitejs/plugin-react": "^6.1.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
+    "jsdom": "^27.4.0",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vite": "^8.3.3"
+    "vite": "^8.3.3",
+    "vitest": "^4.1.11"
   }
 }

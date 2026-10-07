@@ -14,6 +14,7 @@ export default defineConfig({
       { find: "next/link", replacement: file("./web/compat/link.tsx") },
       { find: "next/image", replacement: file("./web/compat/image.tsx") },
       { find: "@/lib/http", replacement: file("./web/http.ts") },
+      { find: "@/lib/speech", replacement: file("./web/speech.ts") },
       { find: "@", replacement: file("../src/") },
     ],
     dedupe: ["react", "react-dom"],
@@ -22,8 +23,8 @@ export default defineConfig({
   define: {
     "process.env.NEXT_PUBLIC_API_URL": JSON.stringify(process.env.NATIVE_API_URL || "https://cook-api.corerevive.cn/api/v1"),
     "process.env.NEXT_PUBLIC_API_BASE": JSON.stringify(process.env.NATIVE_API_URL || "https://cook-api.corerevive.cn/api/v1"),
-    "process.env.NEXT_PUBLIC_RECIPE_AGENT_URL": JSON.stringify("https://cook.corerevive.cn/recipe-chef"),
-    "process.env.NEXT_PUBLIC_RECIPE_FINDER_AGENT_URL": JSON.stringify("https://cook.corerevive.cn/recipe-finder"),
+    "process.env.NEXT_PUBLIC_RECIPE_AGENT_URL": JSON.stringify("https://cook.corerevive.cn/api/client/recipe-chef"),
+    "process.env.NEXT_PUBLIC_RECIPE_FINDER_AGENT_URL": JSON.stringify("https://cook.corerevive.cn/api/client/recipe-finder"),
     "process.env.NEXT_PUBLIC_USE_MOCK": JSON.stringify("false"),
   },
   css: { postcss: file("../") },

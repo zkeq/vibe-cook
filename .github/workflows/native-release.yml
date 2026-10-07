@@ -26,7 +26,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx tsc --noEmit
-      - run: npx eslint native/web native/vite.config.mts capacitor.config.ts src/lib/http.ts --max-warnings 0
+      - run: npm run test:native
+      - run: npx eslint native/web native/tests native/vitest.config.mts native/vite.config.mts capacitor.config.ts src/lib/http.ts src/lib/speech.ts src/components/cook/tts-settings-panel.tsx 'src/app/api/client/[agent]/route.ts' --max-warnings 0
       - run: npm run build
       - run: npm run native:build
 

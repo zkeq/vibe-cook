@@ -13,6 +13,7 @@ import "@fancyapps/ui/dist/fancybox/fancybox.css";
 import { TtsSettingsPanel, loadTtsSettings, type TtsSettings } from "@/components/cook/tts-settings-panel";
 import { useUserSettingsStore } from "@/store/user-settings-store";
 import { RecipeAgent } from "@/components/recipe-agent";
+import { speech, speechErrorMessage } from "@/lib/speech";
 
 const renderHighlightedTitle = (title: string) => {
   const verbs = ["洗净", "合炒", "调味出锅", "切块", "打鸡蛋", "煎鸡蛋", "盛出", "炒", "切", "打", "煎", "煮", "蒸", "炖", "拌", "去皮", "腌制", "滑炒", "爆香", "勾芡", "备菜"];
@@ -100,6 +101,7 @@ export function CookClient({ recipe }: CookClientProps) {
   const [ttsEnabled, setTtsEnabled] = useState(false);
   const [ttsSettings, setTtsSettings] = useState<TtsSettings>({ rate: 1.12, voiceURI: "" });
   const [ttsSettingsOpen, setTtsSettingsOpen] = useState(false);
+  const [ttsError, setTtsError] = useState("");
   const [ingredientsExpanded, setIngredientsExpanded] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -311,24 +313,18 @@ export function CookClient({ recipe }: CookClientProps) {
     setIsStepTimerRunning(true);
   }, [currentStep]);
 
-  // TTS 朗读当前步骤
+  // TTS 朗读当前步骤；设置面板试听时暂停自动朗读，避免两段声音重叠。
   useEffect(() => {
-    if (!ttsEnabled) return;
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    if (!ttsEnabled || ttsSettingsOpen) return;
     const step = recipe.steps[currentStep];
     if (!step) return;
-    window.speechSynthesis.cancel();
-    const text = `第${step.index}步，${step.title}。${step.instruction}`;
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = "zh-CN";
-    utter.rate = ttsSettings.rate;
-    if (ttsSettings.voiceURI) {
-      const v = window.speechSynthesis.getVoices().find(x => x.voiceURI === ttsSettings.voiceURI);
-      if (v) utter.voice = v;
-    }
-    window.speechSynthesis.speak(utter);
-    return () => { window.speechSynthesis.cancel(); };
-  }, [currentStep, ttsEnabled, ttsSettings, recipe.steps]);
+    let active = true;
+    setTtsError("");
+    void speech.speak(`第${step.index}步，${step.title}。${step.instruction}`, ttsSettings).catch((error) => {
+      if (active) { setTtsError(speechErrorMessage(error)); setTtsEnabled(false); }
+    });
+    return () => { active = false; void speech.stop(); };
+  }, [currentStep, ttsEnabled, ttsSettings, ttsSettingsOpen, recipe.steps]);
 
   // 步骤正计时逻辑
   useEffect(() => {
@@ -1484,6 +1480,12 @@ export function CookClient({ recipe }: CookClientProps) {
       </main>
 
       {/* TTS 设置面板 */}
+      {ttsError && (
+        <div role="alert" className="fixed bottom-5 left-4 right-4 z-[70] mx-auto flex max-w-lg items-start gap-3 rounded-xl border border-red-200 bg-white p-4 text-sm text-red-700 shadow-lg">
+          <span className="flex-1">{ttsError}</span>
+          <button onClick={() => setTtsError("")} aria-label="关闭朗读提示"><X className="h-4 w-4" /></button>
+        </div>
+      )}
       <TtsSettingsPanel
         open={ttsSettingsOpen}
         onClose={() => setTtsSettingsOpen(false)}

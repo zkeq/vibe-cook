@@ -24,7 +24,7 @@ export default function CookPage() {
 
   if (isLoading || !currentRecipe) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-neutral-50">
+      <div className="native-cook-viewport flex items-center justify-center min-h-screen bg-neutral-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-sm text-muted-foreground">准备烹饪中...</p>

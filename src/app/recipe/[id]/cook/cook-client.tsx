@@ -360,7 +360,7 @@ export function CookClient({ recipe }: CookClientProps) {
   };
 
   return (
-    <div className="flex h-screen bg-neutral-50 text-foreground overflow-hidden">
+    <div className="native-cook-viewport flex h-screen bg-neutral-50 text-foreground overflow-hidden">
 
       {/* 左侧栏 - 仪表盘式垂直目录 - 桌面端显示，移动端隐藏 */}
       <aside
@@ -1077,7 +1077,7 @@ export function CookClient({ recipe }: CookClientProps) {
           </header>
 
           {/* 2. 移动端主体滚动区 (Scrollable Content Body) */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-6 min-h-0">
+          <div className="flex-1 overflow-y-auto overscroll-y-contain scrollbar-hide p-4 space-y-4 pb-6 min-h-0">
 
             {/* 2.1 步骤展示图 (Image or illustration) */}
             <div ref={mobileStepImageContainerRef} className="w-full aspect-video md:aspect-[2/1] rounded-2xl border border-border bg-white flex items-center justify-center overflow-hidden relative shadow-sm shrink-0">

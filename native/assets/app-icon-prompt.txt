@@ -1,0 +1,6 @@
+Generated with the built-in Codex imagegen tool on 2026-10-17.
+
+Reference 1: user-provided Dev.tool image (metal material and light effects only).
+Reference 2: previous Vibe Cook orange ChefHat icon (brand identity).
+
+Create one production Vibe Cook application icon using both references. Preserve warm orange #f5701f and the recognizable three-lobed chef hat with its horizontal band. Use sculpted pearl-white and brushed silver, rounded bevels, soft shadows, subtle highlights and a fine curved orbit with two warm-white nodes. Full-bleed opaque orange-to-amber satin background; square canvas without premasked corners. Front view, optically centered, dominant hat legible at small sizes; core emblem within central 65%. No black background, text, letters, arrows, watermark, frame, device mockup or grid.

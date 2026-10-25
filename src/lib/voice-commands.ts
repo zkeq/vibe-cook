@@ -2,7 +2,7 @@
 // 模型首次使用时从 COS 下载并缓存到 Cache Storage，之后离线可用。
 // 构建方式见 native/kws/build.sh。
 
-export type VoiceCommand = "next" | "prev" | "pause" | "resume" | "repeat" | "ingredients" | "close";
+export type VoiceCommand = "next" | "prev" | "pause" | "resume" | "reset" | "repeat" | "ingredients" | "close";
 
 const KWS_BASE_URL = "https://cos.onmicrosoft.cn/cook/kws/v1/";
 const KWS_FILES = [
@@ -13,7 +13,7 @@ const KWS_FILES = [
 ] as const;
 const CACHE_NAME = "vibe-cook-kws-v1";
 
-// 关键词写成模型的拼音 token（由 pypinyin 生成并逐个核对过 tokens.txt）。
+// 关键词写成模型的拼音 token（由 pypinyin 按整词生成并逐个核对过 tokens.txt）。
 // 「一」口语里会变调，三个声调都收；两字词加 #0.35 提高触发门槛。
 // 不收做饭时随口会说的词（好了、开始、回去、等等、调料…），避免误触发。
 const KEYWORDS: Record<VoiceCommand, string[]> = {
@@ -101,11 +101,24 @@ const KEYWORDS: Record<VoiceCommand, string[]> = {
     "d ěng y ì x ià @等一下",
     "b ié d ú l e @别读了",
     "b ù y ào d ú l e @不要读了",
+    "b ú y ào d ú l e @不要读了",
   ],
   resume: [
     "j ì x ù #0.35 @继续",
     "k āi sh ǐ j ì sh í @开始计时",
     "j ì x ù j ì sh í @继续计时",
+  ],
+  reset: [
+    "ch óng x īn j ì sh í @重新计时",
+    "zh òng x īn j ì sh í @重新计时",
+    "ch óng zh ì sh í j iān @重置时间",
+    "zh òng zh ì sh í j iān @重置时间",
+    "ch óng zh ì j ì sh í @重置计时",
+    "zh òng zh ì j ì sh í @重置计时",
+    "j ì sh í g uī l íng @计时归零",
+    "sh í j iān g uī l íng @时间归零",
+    "g uī l íng #0.35 @归零",
+    "q īng l íng #0.35 @清零",
   ],
   repeat: [
     "z ài d ú y ī b iàn @再读一遍",
@@ -117,7 +130,9 @@ const KEYWORDS: Record<VoiceCommand, string[]> = {
     "z ài n iàn y ī b iàn @再念一遍",
     "z ài n iàn y í b iàn @再念一遍",
     "z ài n iàn y ì b iàn @再念一遍",
+    "ch óng d ú #0.35 @重读",
     "zh òng d ú #0.35 @重读",
+    "ch óng f ù #0.35 @重复",
     "zh òng f ù #0.35 @重复",
     "z ài l ái y ī b iàn @再来一遍",
     "z ài l ái y í b iàn @再来一遍",
@@ -150,6 +165,7 @@ const KEYWORDS: Record<VoiceCommand, string[]> = {
     "sh ōu q ǐ #0.35 @收起",
     "sh ōu q ǐ l ái @收起来",
     "b ù k àn l e @不看了",
+    "b ú k àn l e @不看了",
     "h ǎo d e g uān b ì @好的关闭",
     "t uì ch ū #0.35 @退出",
     "y ǐn c áng #0.35 @隐藏",
@@ -171,6 +187,7 @@ export const VOICE_COMMAND_LABELS: Record<VoiceCommand, string> = {
   prev: "上一步",
   pause: "暂停",
   resume: "继续",
+  reset: "重新计时",
   repeat: "再读一遍",
   ingredients: "配料表",
   close: "关闭",

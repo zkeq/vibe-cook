@@ -368,6 +368,11 @@ export function CookClient({ recipe }: CookClientProps) {
       spokenTextRef.current = "";
       void speech.stop();
     } else if (command === "resume") setIsStepTimerRunning(true);
+    else if (command === "reset") {
+      // 本步计时归零并重新开始
+      setStepTimeElapsed(0);
+      setIsStepTimerRunning(true);
+    }
     else if (command === "ingredients") setIngredientsOverlayOpen(true);
     else if (command === "close") setIngredientsOverlayOpen(false);
     else if (command === "repeat") {

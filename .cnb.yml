@@ -23,9 +23,12 @@ $:
         - name: build sherpa-onnx kws wasm
           script: bash native/kws/build.sh
         - name: create release
-          image: cnbcool/git-release
-          settings:
+          type: git:release
+          options:
+            title: 语音指令模型 ${CNB_BRANCH}
             description: 烹饪模式语音指令（sherpa-onnx KWS WebAssembly 构建产物），非客户端版本。
+            preRelease: true
+            latest: "false"
         - name: upload attachments
           image: cnbcool/attachments:latest
           settings:

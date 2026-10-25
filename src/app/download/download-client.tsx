@@ -112,99 +112,164 @@ export default function DownloadClient({ release }: { release: ReleaseInfo }) {
 
   const current = PLATFORMS.find((p) => p.id === detected);
   const currentAsset = current && findAsset(release.assets, PLATFORM_FILES[current.id].primary);
+  // 首屏展示的安装包大小：当前设备的，未识别时取各平台中最小的
+  const heroSize = Math.round(
+    (currentAsset?.size ??
+      Math.min(...PLATFORMS.map((p) => findAsset(release.assets, PLATFORM_FILES[p.id].primary)?.size ?? Infinity))) /
+      1024 /
+      1024
+  );
 
   return (
     <main className="relative min-h-screen overflow-x-hidden pb-16">
       <DotBg />
 
-      {/* Hero */}
-      <section className="relative mx-auto flex max-w-4xl flex-col items-center px-6 pb-14 pt-16 text-center sm:pt-20">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-6 -z-10 h-80 w-80 -translate-x-1/2 rounded-full bg-primary/20 blur-3xl"
-        />
-        <motion.img
-          src="/icon-512.png"
-          alt="Vibe Cook"
-          width={112}
-          height={112}
-          initial={{ scale: 0.7, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 180, damping: 20 }}
-          className="h-28 w-28 rounded-[28px] shadow-2xl shadow-primary/30"
-        />
-
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.15, ease }}
-          className="mt-7 flex flex-col items-center"
-        >
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white/80 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
-            </span>
-            最新版本 {release.version} · {formatDate(release.publishedAt)}发布
-          </span>
-
-          <h1 className="mt-5 text-[2rem] font-black leading-tight tracking-tight text-foreground sm:text-5xl">
-            把灵感厨房，<br className="sm:hidden" />装进你的设备
-          </h1>
-          <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground">
-            分步引导、语音朗读、屏幕常亮，跟着一步步就做出来了。
-            <br className="hidden sm:block" />
-            Mac、Windows、Android、iOS 全平台，同一份体验。
-          </p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3, ease }}
-          className="mt-9 flex min-h-[7.5rem] flex-col items-center gap-3"
-        >
-          {current && currentAsset ? (
-            <>
-              <a
-                href={currentAsset.url}
-                className="group inline-flex items-center gap-3 rounded-2xl bg-primary px-7 py-4 text-base font-bold text-primary-foreground shadow-xl shadow-primary/30 transition-all hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-primary/40 active:translate-y-0 active:scale-[0.98]"
-              >
-                <current.Icon className="h-5 w-5" />
-                下载 {current.name} 版
-                <Download className="h-4 w-4 opacity-80 transition-transform group-hover:translate-y-0.5" />
-              </a>
-              <span className="text-xs text-muted-foreground">
-                {release.version} · {current.format} · {formatSize(currentAsset.size)}
-                {current.caution && <span className="text-accent"> · {current.caution}</span>}
-              </span>
-            </>
-          ) : (
-            detected !== null && (
-              <>
-                <a
-                  href="#platforms"
-                  className="inline-flex items-center gap-2 rounded-2xl bg-primary px-7 py-4 text-base font-bold text-primary-foreground shadow-xl shadow-primary/30 transition-all hover:-translate-y-0.5"
-                >
-                  选择你的平台
-                  <ArrowDown className="h-4 w-4" />
-                </a>
-                <span className="text-xs text-muted-foreground">暂未提供该系统的客户端，也可以直接使用网页版</span>
-              </>
-            )
-          )}
-          <div className="mt-1 flex items-center gap-5 text-sm">
-            {current && (
-              <a href="#platforms" className="font-medium text-muted-foreground transition-colors hover:text-foreground">
-                其他平台
-              </a>
-            )}
-            <Link href="/" className="inline-flex items-center gap-1 font-medium text-primary transition-colors hover:text-primary/80">
-              继续使用网页版
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
+      {/* Hero：与首页同构（左图标 · 分隔线 · 右文案），铺满首屏并居中 */}
+      <section className="relative mx-auto flex min-h-[calc(100svh-3.5rem)] max-w-6xl items-center px-8 py-12">
+        <div className="grid w-full items-center gap-10 lg:grid-cols-[1fr_1px_1.35fr] lg:gap-16">
+          <div className="relative flex flex-col items-center justify-center gap-5 lg:justify-self-center">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute left-1/2 top-20 -z-10 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/20 blur-3xl"
+            />
+            <motion.img
+              src="/icon-512.png"
+              alt="Vibe Cook"
+              width={160}
+              height={160}
+              initial={{ scale: 0.7, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 180, damping: 20, delay: 0.1 }}
+              className="h-32 w-32 rounded-[32px] shadow-2xl shadow-primary/30 lg:h-40 lg:w-40 lg:rounded-[40px]"
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className="flex flex-col items-center gap-1"
+            >
+              <span className="text-4xl font-black tracking-tight text-foreground">Vibe Cook</span>
+              <span className="text-sm font-medium uppercase tracking-widest text-muted-foreground">客户端下载</span>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.45, duration: 0.6 }}
+              className="mt-3 flex w-full flex-col items-center lg:items-start"
+            >
+              <div className="mb-5 h-px w-full bg-border" />
+          <div className="flex items-center gap-5 text-left">
+            <div>
+              <span className="text-4xl font-black text-foreground">{PLATFORMS.length}</span>
+              <p className="text-xs text-muted-foreground">支持平台</p>
+            </div>
+            <div className="h-8 w-px bg-border" />
+            <div>
+              <span className="text-4xl font-black text-foreground">{heroSize}</span>
+              <span className="ml-0.5 text-lg font-black text-primary">MB</span>
+              <p className="text-xs text-muted-foreground">安装包大小</p>
+            </div>
+            <div className="h-8 w-px bg-border" />
+            <div>
+              <span className="text-4xl font-black text-foreground">{release.version.replace(/^v/, "")}</span>
+              <p className="text-xs text-muted-foreground">最新版本</p>
+            </div>
           </div>
-        </motion.div>
+
+          <div className="mt-5 flex items-center justify-center gap-3 lg:justify-start">
+            <span className="text-xs text-muted-foreground">全平台可用</span>
+            <div className="flex items-center gap-1.5">
+              {PLATFORMS.map(({ id, name, Icon }) => (
+                <a
+                  key={id}
+                  href="#platforms"
+                  title={name}
+                  className={cn(
+                    "grid h-8 w-8 place-items-center rounded-lg border transition-colors",
+                    id === detected
+                      ? "border-primary/40 bg-primary/10 text-primary"
+                      : "border-border bg-white/80 text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                </a>
+              ))}
+            </div>
+          </div>
+            </motion.div>
+          </div>
+
+          <div className="hidden h-auto w-px self-stretch bg-border lg:block" />
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3, ease }}
+            className="flex w-full max-w-xl flex-col items-center justify-self-center text-center lg:items-start lg:justify-self-start lg:text-left"
+          >
+            <p className="text-sm font-medium uppercase tracking-widest text-primary">
+              Download · {release.version}
+            </p>
+            <h1 className="mt-2 text-4xl font-black leading-snug tracking-tight text-foreground sm:text-5xl">
+              把灵感厨房，
+              <br />
+              装进<span className="text-primary">你的设备</span>
+            </h1>
+            <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+              分步引导、语音朗读、屏幕常亮。Mac、Windows、Android、iOS 全平台，同一份体验。
+            </p>
+
+            <div className="my-6 h-px w-full bg-border" />
+
+            <div className="flex min-h-[3.25rem] flex-wrap items-center justify-center gap-3 lg:justify-start">
+              {current && currentAsset ? (
+                <a
+                  href={currentAsset.url}
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-base font-bold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:bg-primary/90 active:scale-[0.98]"
+                >
+                  <current.Icon className="h-4 w-4" />
+                  下载 {current.name} 版
+                </a>
+              ) : (
+                detected !== null && (
+                  <a
+                    href="#platforms"
+                    className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-base font-bold text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:bg-primary/90"
+                  >
+                    选择你的平台
+                    <ArrowDown className="h-4 w-4" />
+                  </a>
+                )
+              )}
+              <Link
+                href="/"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-white px-6 py-3.5 text-base font-bold text-foreground transition-colors hover:border-primary/50 hover:text-primary"
+              >
+                打开网页版
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+            <p className="mt-3 min-h-4 text-xs text-muted-foreground">
+              {current && currentAsset ? (
+                <>
+                  {formatDate(release.publishedAt)}发布 · {current.format} · {formatSize(currentAsset.size)}
+                  {current.caution && <span className="text-accent"> · {current.caution}</span>}
+                </>
+              ) : (
+                detected === "other" && "暂未提供该系统的客户端，也可以直接使用网页版"
+              )}
+            </p>
+
+          </motion.div>
+        </div>
+
+        <a
+          href="#platforms"
+          className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground sm:flex"
+        >
+          全部平台
+          <ArrowDown className="h-3.5 w-3.5" />
+        </a>
       </section>
 
       {/* 平台列表 */}

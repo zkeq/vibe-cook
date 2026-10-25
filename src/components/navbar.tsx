@@ -18,6 +18,7 @@ const isNativeClient = process.env.NEXT_PUBLIC_NATIVE_CLIENT === "true";
 const navItems = [
   { href: "/", label: "食谱", icon: BookOpen },
   { href: "/explore", label: "发现", icon: Search },
+  ...(isNativeClient ? [] : [{ href: "/download", label: "下载", icon: Download }]),
 ];
 
 interface NavbarProps {
@@ -184,20 +185,17 @@ export function Navbar({ onMenuClick, showMenuButton = false }: NavbarProps = {}
           })}
         </nav>
 
-        {/* 下载客户端 - 仅网页版 */}
+        {/* 下载客户端 - 手机端（桌面端在导航里） */}
         {!isNativeClient && (
           <Link
             href="/download"
             aria-label="下载客户端"
             className={cn(
-              "flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
-              pathname === "/download"
-                ? "border-primary/30 bg-primary/10 text-primary"
-                : "border-border text-foreground hover:border-primary/50 hover:bg-primary/5 hover:text-primary"
+              "grid h-8 w-8 shrink-0 place-items-center rounded-lg transition-colors lg:hidden",
+              pathname === "/download" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
-            <Download className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">下载</span>
+            <Download className="h-4 w-4" />
           </Link>
         )}
 

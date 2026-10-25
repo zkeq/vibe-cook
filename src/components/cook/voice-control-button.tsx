@@ -7,6 +7,7 @@ import { Loader2, Mic, MicOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   VOICE_COMMAND_LABELS,
+  VOICE_PHRASES,
   downloadVoiceModel,
   isVoiceModelReady,
   startVoiceListener,
@@ -54,6 +55,14 @@ export function VoiceControlButton({ variant, onCommand, getSpokenText }: Props)
     handlers.current = { onCommand, getSpokenText };
   });
 
+  // 每次开启语音控制都弹一下词表，告诉用户可以怎么说
+  const [hintsOpen, setHintsOpen] = useState(false);
+  const hintsTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const closeHints = () => {
+    clearTimeout(hintsTimer.current);
+    setHintsOpen(false);
+  };
+
   const showToast = (text: string, error = false) => {
     clearTimeout(toastTimer.current);
     setToast({ id: Date.now(), text, error });
@@ -64,6 +73,7 @@ export function VoiceControlButton({ variant, onCommand, getSpokenText }: Props)
     () => () => {
       stopRef.current?.();
       clearTimeout(toastTimer.current);
+      clearTimeout(hintsTimer.current);
     },
     []
   );
@@ -78,13 +88,16 @@ export function VoiceControlButton({ variant, onCommand, getSpokenText }: Props)
       setStatus("loading");
       stopRef.current = await startVoiceListener({
         onCommand: (command, heard) => {
+          closeHints();
           showToast(`「${heard}」→ ${VOICE_COMMAND_LABELS[command]}`);
           handlers.current.onCommand(command);
         },
         getSpokenText: () => handlers.current.getSpokenText(),
       });
       setStatus("listening");
-      showToast("语音控制已开启");
+      setHintsOpen(true);
+      clearTimeout(hintsTimer.current);
+      hintsTimer.current = setTimeout(() => setHintsOpen(false), 10000);
     } catch (error) {
       setStatus("idle");
       showToast(error instanceof Error ? error.message : "语音控制开启失败", true);
@@ -96,6 +109,7 @@ export function VoiceControlButton({ variant, onCommand, getSpokenText }: Props)
     if (status === "listening") {
       stopRef.current?.();
       stopRef.current = null;
+      closeHints();
       setStatus("idle");
       showToast("语音控制已关闭");
       return;
@@ -165,6 +179,44 @@ export function VoiceControlButton({ variant, onCommand, getSpokenText }: Props)
         )}
       </button>
 
+      {typeof document !== "undefined" &&
+        createPortal(
+          <AnimatePresence>
+            {hintsOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 12 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-x-3 bottom-[max(1rem,env(safe-area-inset-bottom))] z-[95] mx-auto max-w-2xl rounded-2xl border border-border bg-white p-4 shadow-[var(--shadow-float)] sm:p-5"
+                role="dialog"
+                aria-label="语音指令词表"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">语音控制 / Voice</span>
+                    <p className="text-base font-black text-foreground">已开启，直接说出下面的词</p>
+                  </div>
+                  <button
+                    onClick={closeHints}
+                    className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-sm font-bold text-white transition-colors hover:bg-primary/90"
+                  >
+                    知道了
+                  </button>
+                </div>
+                <dl className="mt-3 grid max-h-[50vh] gap-x-6 gap-y-2 overflow-y-auto sm:grid-cols-2">
+                  {(Object.keys(VOICE_PHRASES) as VoiceCommand[]).map((command) => (
+                    <div key={command} className="flex gap-2 border-t border-dashed border-border pt-2 text-xs leading-relaxed">
+                      <dt className="w-14 shrink-0 font-bold text-primary">{VOICE_COMMAND_LABELS[command]}</dt>
+                      <dd className="text-foreground/80">{VOICE_PHRASES[command].join("、")}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
       {typeof document !== "undefined" &&
         createPortal(
           <AnimatePresence>

@@ -14,7 +14,8 @@ const KWS_FILES = [
 const CACHE_NAME = "vibe-cook-kws-v1";
 
 // 关键词写成模型的拼音 token（由 pypinyin 生成并逐个核对过 tokens.txt）。
-// 「一」口语里会变调，三个声调都收；两字词加 #0.35 提高触发门槛，减少误触发。
+// 「一」口语里会变调，三个声调都收；两字词加 #0.35 提高触发门槛。
+// 不收做饭时随口会说的词（好了、开始、回去、等等、调料…），避免误触发。
 const KEYWORDS: Record<VoiceCommand, string[]> = {
   next: [
     "x ià y ī b ù @下一步",
@@ -39,7 +40,6 @@ const KEYWORDS: Record<VoiceCommand, string[]> = {
     "h òu y ī y è @后一页",
     "h òu y í y è @后一页",
     "h òu y ì y è @后一页",
-    "f ān y è #0.35 @翻页",
     "f ān y ī y è @翻一页",
     "f ān y í y è @翻一页",
     "f ān y ì y è @翻一页",
@@ -51,15 +51,6 @@ const KEYWORDS: Record<VoiceCommand, string[]> = {
     "w ǎng h òu #0.35 @往后",
     "x iàng h òu #0.35 @向后",
     "w ǎng h òu f ān @往后翻",
-    "j iē x ià l ái @接下来",
-    "r án h òu n e @然后呢",
-    "h ǎo l e #0.35 @好了",
-    "z uò h ǎo l e @做好了",
-    "w án ch éng l e @完成了",
-    "g ǎo d ìng l e @搞定了",
-    "x ià y ī #0.35 @下一",
-    "x ià y í #0.35 @下一",
-    "x ià y ì #0.35 @下一",
   ],
   prev: [
     "sh àng y ī b ù @上一步",
@@ -84,12 +75,7 @@ const KEYWORDS: Record<VoiceCommand, string[]> = {
     "q ián y ī y è @前一页",
     "q ián y í y è @前一页",
     "q ián y ì y è @前一页",
-    "w ǎng sh àng #0.35 @往上",
-    "x iàng sh àng #0.35 @向上",
-    "w ǎng q ián #0.35 @往前",
     "x iàng q ián #0.35 @向前",
-    "f ǎn h uí #0.35 @返回",
-    "h uí q ù #0.35 @回去",
     "t uì h uí #0.35 @退回",
     "h òu t uì #0.35 @后退",
     "h uí d ào sh àng y ī b ù @回到上一步",
@@ -113,16 +99,11 @@ const KEYWORDS: Record<VoiceCommand, string[]> = {
     "d ěng y ī x ià @等一下",
     "d ěng y í x ià @等一下",
     "d ěng y ì x ià @等一下",
-    "d ěng d ěng #0.35 @等等",
-    "d ěng h uì #0.35 @等会",
     "b ié d ú l e @别读了",
     "b ù y ào d ú l e @不要读了",
-    "ān j ìng #0.35 @安静",
   ],
   resume: [
     "j ì x ù #0.35 @继续",
-    "j iē zh e #0.35 @接着",
-    "k āi sh ǐ #0.35 @开始",
     "k āi sh ǐ j ì sh í @开始计时",
     "j ì x ù j ì sh í @继续计时",
   ],
@@ -148,7 +129,6 @@ const KEYWORDS: Record<VoiceCommand, string[]> = {
     "n iàn y ī x ià @念一下",
     "n iàn y í x ià @念一下",
     "n iàn y ì x ià @念一下",
-    "zh òng x īn d ú @重新读",
   ],
   ingredients: [
     "p èi l iào b iǎo @配料表",
@@ -159,11 +139,7 @@ const KEYWORDS: Record<VoiceCommand, string[]> = {
     "p èi l iào q īng d ān @配料清单",
     "y òng l iào #0.35 @用料",
     "y òng l iào b iǎo @用料表",
-    "sh í c ái #0.35 @食材",
     "sh í c ái q īng d ān @食材清单",
-    "c ái l iào #0.35 @材料",
-    "y uán l iào #0.35 @原料",
-    "d iào l iào #0.35 @调料",
     "f àng d uō sh ǎo @放多少",
     "j iā d uō sh ǎo @加多少",
     "y ào f àng d uō sh ǎo @要放多少",
@@ -171,8 +147,6 @@ const KEYWORDS: Record<VoiceCommand, string[]> = {
   close: [
     "g uān b ì #0.35 @关闭",
     "g uān d iào #0.35 @关掉",
-    "g uān sh àng #0.35 @关上",
-    "g uān l e #0.35 @关了",
     "sh ōu q ǐ #0.35 @收起",
     "sh ōu q ǐ l ái @收起来",
     "b ù k àn l e @不看了",
@@ -186,6 +160,11 @@ const COMMAND_BY_LABEL = new Map(
     lines.map((line) => [line.split("@")[1], command as VoiceCommand] as const)
   )
 );
+
+// 每个指令的全部说法（去掉「一」的变调重复），开启语音控制时展示给用户
+export const VOICE_PHRASES = Object.fromEntries(
+  Object.entries(KEYWORDS).map(([command, lines]) => [command, [...new Set(lines.map((line) => line.split("@")[1]))]])
+) as Record<VoiceCommand, string[]>;
 
 export const VOICE_COMMAND_LABELS: Record<VoiceCommand, string> = {
   next: "下一步",

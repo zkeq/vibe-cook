@@ -17,7 +17,7 @@
 <p align="center">
   <a href="https://cook.corerevive.cn">👉 打开 Vibe Cook</a>
   ·
-  <a href="https://github.com/zkeq/vibe-cook/releases/latest">下载客户端</a>
+  <a href="https://cook.corerevive.cn/download">下载客户端</a>
   ·
   <a href="#-本地开发">本地开发</a>
   ·
@@ -49,6 +49,7 @@
 | 🏠 | **食谱墙** | 封面、难度、时长、分类浏览，顶部搜索 |
 | 🗺️ | **全解图** | 原料 · 工具 · 份量换算 · 步骤总览，一个「开始做饭」 |
 | 🔥 | **烹饪模式** | 全屏单步引导、计时器、完成打勾、屏幕常亮 |
+| 🎙️ | **语音控制** | 手上有油不用碰屏幕：说「下一步」翻步骤，说「配料表」全屏看用量，本机识别不上传 |
 | 🛒 | **购物清单** | 按菜生成，一人食到宴客，份量自动缩放 |
 | 🥗 | **AI 选菜** | 告诉它冰箱里有什么，帮你配今晚吃什么 |
 | 👨‍🍳 | **AI 厨师** | 做菜过程中随时问：火候、替代、这一步怎么理解 |
@@ -63,6 +64,20 @@
 4. **做完庆祝** — 每一步都有正反馈，整道菜做完有成就感
 
 屏幕常亮、可加到 iPad / 手机主屏，灶台边也能跟。
+
+### 🎙️ 语音控制
+
+烹饪模式右上角点麦克风，之后直接说：
+
+| 指令 | 可以这么说 |
+| --- | --- |
+| 下一步 | 下一步、下一页、下一个、翻一页、往后、向后 |
+| 上一步 | 上一步、上一页、上一个、向前、后退、退一步 |
+| 暂停 / 继续 | 暂停、停一下、等一下 / 继续、继续计时 |
+| 再读一遍 | 再读一遍、再说一遍、重复、没听清 |
+| 配料表 / 关闭 | 配料表、用料、放多少、加多少 / 关闭、收起、不看了 |
+
+开启时会弹出完整词表。识别用 [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) 关键词识别（WebAssembly），全程在本机运行、不上传录音；首次开启下载约 17MB 模型，之后离线可用。「好了」「开始」「回去」这类做饭时随口会说的词不作为指令，避免误触发。
 
 ## 🧬 数据从哪来
 
@@ -81,6 +96,7 @@ HowToCook Markdown  →  LLM 结构化（JSON 分步 + 生图）  →  后端下
 | 动效 | motion |
 | 状态 | Zustand |
 | 交付 | PWA + MyGo 桌面客户端 + Capacitor 移动客户端 |
+| 语音 | sherpa-onnx 关键词识别（WASM，本机运行） |
 | Agent | EdgeOne Makers（选菜 / 厨师） |
 | 后端 | [FastAPI + SQLite](https://github.com/zkeq/vibe-cook-backend) |
 
@@ -136,10 +152,11 @@ edgeone makers dev
 - 静态 / Node：`npm run build`
 - EdgeOne Makers：仓库连到 Makers 项目后 `edgeone makers deploy`
 - 后端单独部署 → [vibe-cook-backend](https://github.com/zkeq/vibe-cook-backend)
+- 语音模型：向 CNB 推送 `kws-*` 标签，流水线用 `native/kws/build.sh` 编译 sherpa-onnx KWS 的 WASM 并挂到对应 Release；产物放到 COS 的 `cook/kws/v1/`，路径与 `src/lib/voice-commands.ts` 中的 `KWS_BASE_URL` 对应
 
 ## 📱 客户端
 
-[下载最新版本](https://github.com/zkeq/vibe-cook/releases/latest)
+[下载页](https://cook.corerevive.cn/download)（自动识别设备）· [CNB 国内下载](https://cnb.cool/onmicrosoft/vibe-cook/frontend/-/releases) · [GitHub Releases](https://github.com/zkeq/vibe-cook/releases/latest)
 
 macOS 和 Windows 客户端使用 [MyGo](https://mygo.egoist.dev/) 构建，Android 和 iOS 客户端使用 [Capacitor](https://capacitorjs.com/) 构建。各平台复用本项目的前端，连接现有菜谱与 AI 服务。
 
@@ -147,6 +164,7 @@ macOS 和 Windows 客户端使用 [MyGo](https://mygo.egoist.dev/) 构建，Andr
 
 - 菜谱：[Anduin2017/HowToCook](https://github.com/Anduin2017/HowToCook) — 没有这份指南就没有 Vibe Cook
 - 客户端框架：[egoist/MyGo](https://github.com/egoist/mygo) 和 [Ionic/Capacitor](https://github.com/ionic-team/capacitor)，感谢它们让前端能够跨平台运行。
+- 语音识别：[k2-fsa/sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx)（Apache-2.0）及其中文关键词识别模型
 - 在线演示：<https://cook.corerevive.cn>
 
 ## 📄 许可

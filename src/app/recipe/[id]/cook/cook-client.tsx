@@ -14,6 +14,9 @@ import { TtsSettingsPanel, loadTtsSettings, type TtsSettings } from "@/component
 import { useUserSettingsStore } from "@/store/user-settings-store";
 import { RecipeAgent } from "@/components/recipe-agent";
 import { speech, speechErrorMessage } from "@/lib/speech";
+import { VoiceControlButton } from "@/components/cook/voice-control-button";
+import { IngredientsOverlay } from "@/components/cook/ingredients-overlay";
+import type { VoiceCommand } from "@/lib/voice-commands";
 
 const renderHighlightedTitle = (title: string) => {
   const verbs = ["洗净", "合炒", "调味出锅", "切块", "打鸡蛋", "煎鸡蛋", "盛出", "炒", "切", "打", "煎", "煮", "蒸", "炖", "拌", "去皮", "腌制", "滑炒", "爆香", "勾芡", "备菜"];
@@ -102,6 +105,12 @@ export function CookClient({ recipe }: CookClientProps) {
   const [ttsSettings, setTtsSettings] = useState<TtsSettings>({ rate: 1.12, voiceURI: "" });
   const [ttsSettingsOpen, setTtsSettingsOpen] = useState(false);
   const [ttsError, setTtsError] = useState("");
+  // 语音指令「再读一遍」时递增，触发重新朗读
+  const [ttsReplay, setTtsReplay] = useState(0);
+  // 正在朗读的文字，语音指令据此忽略 App 自己念出来的词
+  const spokenTextRef = useRef("");
+  // 语音「配料表」打开的全屏配料表
+  const [ingredientsOverlayOpen, setIngredientsOverlayOpen] = useState(false);
   const [ingredientsExpanded, setIngredientsExpanded] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -320,11 +329,15 @@ export function CookClient({ recipe }: CookClientProps) {
     if (!step) return;
     let active = true;
     setTtsError("");
-    void speech.speak(`第${step.index}步，${step.title}。${step.instruction}`, ttsSettings).catch((error) => {
+    const text = `第${step.index}步，${step.title}。${step.instruction}`;
+    spokenTextRef.current = text;
+    void speech.speak(text, ttsSettings).catch((error) => {
       if (active) { setTtsError(speechErrorMessage(error)); setTtsEnabled(false); }
+    }).finally(() => {
+      if (spokenTextRef.current === text) spokenTextRef.current = "";
     });
-    return () => { active = false; void speech.stop(); };
-  }, [currentStep, ttsEnabled, ttsSettings, ttsSettingsOpen, recipe.steps]);
+    return () => { active = false; spokenTextRef.current = ""; void speech.stop(); };
+  }, [currentStep, ttsEnabled, ttsSettings, ttsSettingsOpen, recipe.steps, ttsReplay]);
 
   // 步骤正计时逻辑
   useEffect(() => {
@@ -347,6 +360,30 @@ export function CookClient({ recipe }: CookClientProps) {
     }
   };
 
+  const handleVoiceCommand = (command: VoiceCommand) => {
+    if (command === "next") handleNext();
+    else if (command === "prev") handlePrev();
+    else if (command === "pause") {
+      setIsStepTimerRunning(false);
+      spokenTextRef.current = "";
+      void speech.stop();
+    } else if (command === "resume") setIsStepTimerRunning(true);
+    else if (command === "ingredients") setIngredientsOverlayOpen(true);
+    else if (command === "close") setIngredientsOverlayOpen(false);
+    else if (command === "repeat") {
+      if (ttsEnabled) setTtsReplay((n) => n + 1);
+      else {
+        const step = recipe.steps[currentStep];
+        const text = `第${step.index}步，${step.title}。${step.instruction}`;
+        spokenTextRef.current = text;
+        void speech.speak(text, ttsSettings).catch(() => {}).finally(() => {
+          if (spokenTextRef.current === text) spokenTextRef.current = "";
+        });
+      }
+    }
+  };
+  const getSpokenText = () => spokenTextRef.current;
+
   const currentStepData = recipe.steps[currentStep];
   const currentAgentTips = recipeTipAdditions[recipe.id]?.[currentStep] || [];
   const currentStepTips = [...(currentStepData.tips || []), ...currentAgentTips];
@@ -361,6 +398,13 @@ export function CookClient({ recipe }: CookClientProps) {
 
   return (
     <div className="native-cook-viewport flex h-screen bg-neutral-50 text-foreground overflow-hidden">
+      <IngredientsOverlay
+        open={ingredientsOverlayOpen}
+        onClose={() => setIngredientsOverlayOpen(false)}
+        title={recipe.title}
+        servings={servings}
+        ingredients={scaledIngredients}
+      />
 
       {/* 左侧栏 - 仪表盘式垂直目录 - 桌面端显示，移动端隐藏 */}
       <aside
@@ -559,6 +603,9 @@ export function CookClient({ recipe }: CookClientProps) {
                   <Settings className="h-4 w-4" />
                 </button>
               </div>
+
+              {/* 语音指令 */}
+              <VoiceControlButton variant="desktop" onCommand={handleVoiceCommand} getSpokenText={getSpokenText} />
 
               {/* 菜谱 Agent */}
               <RecipeAgent
@@ -987,6 +1034,7 @@ export function CookClient({ recipe }: CookClientProps) {
                   currentStepIndex={currentStep}
                   triggerVariant="cook-mobile"
                 />
+                <VoiceControlButton variant="mobile" onCommand={handleVoiceCommand} getSpokenText={getSpokenText} />
                 <button
                   onClick={() => setTtsEnabled(!ttsEnabled)}
                   className={cn(

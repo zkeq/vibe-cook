@@ -26,7 +26,7 @@ jobs:
       - run: npm ci
       - run: npx tsc --noEmit
       - run: npm run test:native
-      - run: npx eslint native/web native/tests native/vitest.config.mts native/vite.config.mts capacitor.config.ts src/lib/http.ts src/lib/speech.ts src/components/cook/tts-settings-panel.tsx 'src/app/api/client/[agent]/route.ts' --max-warnings 0
+      - run: npx eslint native/web native/tests native/vitest.config.mts native/vite.config.mts capacitor.config.ts src/lib/http.ts src/lib/speech.ts src/components/cook/tts-settings-panel.tsx src/components/cook/voice-control-button.tsx src/components/cook/ingredients-overlay.tsx src/lib/voice-commands.ts 'src/app/api/client/[agent]/route.ts' --max-warnings 0
       - run: npm run build
       - run: npm run native:build
 

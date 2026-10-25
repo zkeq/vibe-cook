@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ArrowDown, ArrowRight, Check, Copy, Download, ExternalLink, Globe, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowRight, Check, Copy, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DotBg } from "@/components/home/dot-bg";
 import { AndroidMark, AppleMark, WindowsMark } from "@/components/download/platform-icons";
@@ -26,7 +26,6 @@ interface PlatformMeta {
   Icon: (props: { className?: string }) => React.ReactNode;
   requirement: string;
   format: string;
-  pitch: string;
   caution?: string;
   steps: string[];
 }
@@ -36,13 +35,12 @@ const PLATFORMS: PlatformMeta[] = [
     id: "macos",
     name: "macOS",
     Icon: AppleMark,
-    requirement: "macOS 12 及以上 · Apple 芯片与 Intel 通用",
+    requirement: "macOS 12+ · Apple 芯片 / Intel 通用",
     format: "DMG",
-    pitch: "标题栏融入页面，保留原生窗口按钮，大屏跟做更从容。",
     steps: [
-      "打开下载好的 .dmg，把 Vibe Cook 拖进「应用程序」文件夹。",
-      "首次打开如提示“无法验证开发者”，前往「系统设置 › 隐私与安全性」，点「仍要打开」。",
-      "之后从启动台或程序坞直接打开即可。",
+      "打开 .dmg，将 Vibe Cook 拖入「应用程序」",
+      "首次打开提示「无法验证开发者」：系统设置 › 隐私与安全性 › 仍要打开",
+      "应用暂未经 Apple 公证，仅首次需要确认",
     ],
   },
   {
@@ -51,38 +49,35 @@ const PLATFORMS: PlatformMeta[] = [
     Icon: WindowsMark,
     requirement: "Windows 10 / 11 · x64",
     format: "EXE 安装程序",
-    pitch: "一键安装，开始菜单直达，厨房里的笔记本也能用。",
     steps: [
-      "运行下载好的安装程序，按提示完成安装。",
-      "如出现 SmartScreen 提示，点「更多信息」→「仍要运行」（安装包暂未配置发布者签名）。",
-      "安装完成后，从开始菜单或桌面快捷方式打开。",
+      "运行安装程序，按提示完成安装",
+      "SmartScreen 拦截时：更多信息 › 仍要运行",
+      "安装包暂未签名，仅首次需要确认",
     ],
   },
   {
     id: "android",
     name: "Android",
     Icon: AndroidMark,
-    requirement: "Android 7.0 及以上",
+    requirement: "Android 7.0+",
     format: "APK",
-    pitch: "支持系统语音朗读步骤，双手沾满面粉也不用碰屏幕。",
     steps: [
-      "在手机浏览器中下载 APK。",
-      "按提示允许浏览器「安装未知应用」。",
-      "打开 APK 完成安装。朗读功能使用系统语音引擎，未安装中文语音时会给出提示。",
+      "在手机浏览器中下载 APK",
+      "按提示允许「安装未知应用」",
+      "语音朗读依赖系统中文语音包，缺失时 App 内会提示",
     ],
   },
   {
     id: "ios",
     name: "iOS / iPadOS",
     Icon: AppleMark,
-    requirement: "iOS 16.4 及以上",
+    requirement: "iOS 16.4+",
     format: "IPA（未签名）",
-    pitch: "iPad 立在灶台边，全屏沉浸、屏幕常亮。",
-    caution: "需自行签名",
+    caution: "需自签名",
     steps: [
-      "安装包未签名，需要用你自己的 Apple 开发者证书和描述文件重新签名后才能装到真机。",
-      "开发者可下载 Xcode Archive，在 Xcode 中选择自己的团队导出安装。",
-      "不想折腾签名？用 Safari 打开网页版，点「分享 › 添加到主屏幕」，同样全屏使用。",
+      "IPA 未签名，需使用自己的 Apple 开发者证书签名后安装",
+      "Xcode 用户可下载 Xcode Archive，选择自己的团队导出",
+      "免安装：Safari 打开网页版 › 分享 › 添加到主屏幕",
     ],
   },
 ];
@@ -177,7 +172,7 @@ export default function DownloadClient({ release }: { release: ReleaseInfo }) {
           </div>
 
           <div className="mt-5 flex items-center justify-center gap-3 lg:justify-start">
-            <span className="text-xs text-muted-foreground">全平台可用</span>
+            <span className="text-xs text-muted-foreground">可用平台</span>
             <div className="flex items-center gap-1.5">
               {PLATFORMS.map(({ id, name, Icon }) => (
                 <a
@@ -211,12 +206,12 @@ export default function DownloadClient({ release }: { release: ReleaseInfo }) {
               Download · {release.version}
             </p>
             <h1 className="mt-2 text-4xl font-black leading-snug tracking-tight text-foreground sm:text-5xl">
-              把灵感厨房，
+              把「跟着做就会」
               <br />
-              装进<span className="text-primary">你的设备</span>
+              带进<span className="text-primary">「厨房」</span>
             </h1>
             <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-              分步引导、语音朗读、屏幕常亮。Mac、Windows、Android、iOS 全平台，同一份体验。
+              分步引导 · 计时器 · 语音朗读 · 屏幕常亮，macOS、Windows、Android、iOS 四端可用。
             </p>
 
             <div className="my-6 h-px w-full bg-border" />
@@ -256,7 +251,7 @@ export default function DownloadClient({ release }: { release: ReleaseInfo }) {
                   {current.caution && <span className="text-accent"> · {current.caution}</span>}
                 </>
               ) : (
-                detected === "other" && "暂未提供该系统的客户端，也可以直接使用网页版"
+                detected === "other" && "当前系统暂无客户端，可直接使用网页版"
               )}
             </p>
 
@@ -264,31 +259,31 @@ export default function DownloadClient({ release }: { release: ReleaseInfo }) {
         </div>
 
         <a
-          href="#platforms"
+          href="#tour"
           className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground sm:flex"
         >
-          全部平台
+          所有平台
           <ArrowDown className="h-3.5 w-3.5" />
         </a>
       </section>
 
       {/* 平台列表 */}
-      <section id="platforms" className="mx-auto max-w-6xl scroll-mt-20 px-6">
+      <section id="platforms" className="mx-auto mt-16 max-w-6xl scroll-mt-20 px-6">
         <div className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-xl font-bold text-foreground">全部平台</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <div className="flex items-baseline gap-2">
+              <h2 className="text-base font-bold text-foreground">所有平台</h2>
+              <span className="text-xs text-muted-foreground">{PLATFORMS.length} 端</span>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
               {current ? (
-                <>已识别你的设备为 <span className="font-semibold text-primary">{current.name}</span>，已为你高亮推荐</>
+                <>当前设备：<span className="font-semibold text-primary">{current.name}</span></>
               ) : (
-                "选择适合你设备的安装包"
+                "选择对应平台的安装包"
               )}
             </p>
           </div>
-          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-            <ShieldCheck className="h-3.5 w-3.5 text-success" />
-            由 CNB 国内加速下载 · 每个文件提供 SHA-256 校验
-          </span>
+          <span className="text-xs text-muted-foreground">CNB 加速下载 · GitHub 镜像</span>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -307,8 +302,8 @@ export default function DownloadClient({ release }: { release: ReleaseInfo }) {
       {/* 安装指引 */}
       <section className="mx-auto mt-16 max-w-6xl px-6">
         <div className="grid gap-6 lg:grid-cols-5">
-          <div className="rounded-[var(--radius)] border border-border bg-white p-6 shadow-[var(--shadow-card)] lg:col-span-3">
-            <h2 className="text-lg font-bold text-foreground">安装指引</h2>
+          <div className="rounded-[var(--radius)] border border-border bg-white p-6 shadow-sm lg:col-span-3">
+            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">安装说明</span>
             <div className="mt-4 grid grid-cols-4 gap-1 rounded-xl bg-muted p-1">
               {PLATFORMS.map(({ id, name }) => (
                 <button
@@ -349,28 +344,23 @@ export default function DownloadClient({ release }: { release: ReleaseInfo }) {
           </div>
 
           <div className="flex flex-col gap-4 lg:col-span-2">
-            <div className="rounded-[var(--radius)] border border-border bg-white p-6 shadow-[var(--shadow-card)]">
-              <div className="flex items-center gap-2">
-                <Globe className="h-4 w-4 text-primary" />
-                <h3 className="font-bold text-foreground">下载源</h3>
-              </div>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                下载按钮默认走 CNB，国内网络更快更稳；海外用户可使用 GitHub 镜像，文件完全一致。
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <a href={CNB_RELEASES_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-muted">
-                  CNB 全部版本 <ExternalLink className="h-3 w-3" />
-                </a>
-                <a href={GITHUB_RELEASES_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-muted">
-                  GitHub Releases <ExternalLink className="h-3 w-3" />
-                </a>
-              </div>
-            </div>
-            <div className="rounded-[var(--radius)] border border-border bg-white p-6 shadow-[var(--shadow-card)]">
-              <h3 className="font-bold text-foreground">需要联网</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                菜谱与 AI 功能需要联网使用，桌面端与移动端 AI 均支持逐段流式回复。
-              </p>
+            <div className="rounded-[var(--radius)] border border-border bg-white p-6 shadow-sm">
+              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">注意事项</span>
+              <ul className="mt-3 flex flex-col gap-2.5 text-sm text-foreground/80">
+                <li>菜谱与 AI 功能需联网使用</li>
+                <li>
+                  下载源：CNB（默认）·{" "}
+                  <a href={GITHUB_RELEASES_URL} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
+                    GitHub 镜像
+                  </a>
+                </li>
+                <li>
+                  历史版本：
+                  <a href={CNB_RELEASES_URL} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary/80">
+                    CNB Releases
+                  </a>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
@@ -379,10 +369,9 @@ export default function DownloadClient({ release }: { release: ReleaseInfo }) {
       {/* 更新日志 */}
       {release.notes && (
         <section className="mx-auto mt-16 max-w-6xl px-6">
-          <div className="rounded-[var(--radius)] border border-border bg-white p-6 shadow-[var(--shadow-card)] sm:p-8">
+          <div className="rounded-[var(--radius)] border border-border bg-white p-6 shadow-sm sm:p-8">
             <div className="flex flex-wrap items-center gap-3">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <h2 className="text-lg font-bold text-foreground">{release.version} 更新内容</h2>
+              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">更新日志 · {release.version}</span>
               <span className="text-xs text-muted-foreground">{formatDate(release.publishedAt)}</span>
             </div>
             <div className="mt-4 max-w-3xl text-sm leading-relaxed text-foreground/80 [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-xs [&_li]:mt-1.5 [&_p]:mt-3 [&_ul]:mt-3 [&_ul]:list-disc [&_ul]:pl-5">
@@ -394,18 +383,11 @@ export default function DownloadClient({ release }: { release: ReleaseInfo }) {
 
       {/* 底部 CTA */}
       <section className="mx-auto mt-16 max-w-6xl px-6">
-        <div className="relative overflow-hidden rounded-[var(--radius)] bg-gradient-to-br from-primary to-accent px-8 py-10 text-white shadow-[var(--shadow-float)] sm:flex sm:items-center sm:justify-between">
-          <div aria-hidden className="absolute -right-10 -top-16 h-56 w-56 rounded-full bg-white/15 blur-2xl" />
-          <div className="relative">
-            <h2 className="text-2xl font-black tracking-tight">不想安装？</h2>
-            <p className="mt-1.5 text-sm text-white/85">打开浏览器就能跟着做，iPad 上添加到主屏幕即可全屏使用。</p>
-          </div>
-          <Link
-            href="/"
-            className="relative mt-6 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-primary shadow-lg transition-transform hover:-translate-y-0.5 sm:mt-0"
-          >
+        <div className="flex flex-col gap-3 border-t border-border pt-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <p>不想安装？网页版功能一致，打开即用。</p>
+          <Link href="/" className="inline-flex items-center gap-1 font-medium text-primary hover:text-primary/80">
             打开网页版
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
       </section>
@@ -445,25 +427,15 @@ function PlatformCard({
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: highlighted ? -6 : 0, scale: highlighted ? 1.02 : 1 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.35 + index * 0.06, type: "spring", stiffness: 260, damping: 24 }}
       className={cn(
         "relative flex flex-col rounded-[var(--radius)] border bg-white p-5 transition-shadow",
         highlighted
-          ? "order-first border-primary shadow-[var(--shadow-float)] ring-4 ring-primary/15 sm:order-none"
-          : "border-border shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-float)]"
+          ? "order-first border-primary shadow-[var(--shadow-float)] sm:order-none"
+          : "border-border shadow-sm hover:shadow-[var(--shadow-float)]"
       )}
     >
-      {highlighted && (
-        <motion.span
-          aria-hidden
-          className="pointer-events-none absolute inset-0 rounded-[var(--radius)] ring-2 ring-primary"
-          initial={{ opacity: 0.9, scale: 1 }}
-          animate={{ opacity: 0, scale: 1.08 }}
-          transition={{ duration: 1.4, repeat: 2, ease: "easeOut", delay: 0.6 }}
-        />
-      )}
-
       <div className="flex items-start justify-between">
         <span
           className={cn(
@@ -474,7 +446,7 @@ function PlatformCard({
           <platform.Icon className="h-6 w-6" />
         </span>
         {highlighted ? (
-          <span className="rounded-full bg-primary px-2.5 py-1 text-[11px] font-bold text-white">你的设备</span>
+          <span className="rounded-full bg-primary px-2.5 py-1 text-[11px] font-bold text-white">当前设备</span>
         ) : (
           platform.caution && (
             <span className="rounded-full bg-accent/10 px-2.5 py-1 text-[11px] font-bold text-accent">{platform.caution}</span>
@@ -483,8 +455,10 @@ function PlatformCard({
       </div>
 
       <h3 className="mt-4 text-lg font-bold text-foreground">{platform.name}</h3>
-      <p className="mt-0.5 text-xs text-muted-foreground">{platform.requirement}</p>
-      <p className="mt-3 flex-1 text-sm leading-relaxed text-foreground/75">{platform.pitch}</p>
+      <div className="mt-3 flex-1">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">系统要求 / Requires</p>
+        <p className="mt-0.5 text-xs text-foreground">{platform.requirement}</p>
+      </div>
 
       {asset ? (
         <>
@@ -526,7 +500,7 @@ function PlatformCard({
           </div>
         </>
       ) : (
-        <p className="mt-5 text-xs text-muted-foreground">该平台暂无安装包</p>
+        <p className="mt-5 text-xs text-muted-foreground">这个平台暂时还没有安装包</p>
       )}
     </motion.div>
   );

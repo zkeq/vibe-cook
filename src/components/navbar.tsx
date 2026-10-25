@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ChefHat, BookOpen, Search, Menu } from "lucide-react";
+import { ChefHat, BookOpen, Search, Menu, Download } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 import { useIntro } from "@/lib/intro-context";
@@ -11,6 +11,9 @@ import { useState, useEffect, useRef } from "react";
 import recipeAPI from "@/services/recipe-api";
 import type { RecipeSummary } from "@/lib/types";
 import { RecipeFinderAgent } from "@/components/home/recipe-finder-agent";
+
+// 原生客户端（vite 构建）里不展示下载入口
+const isNativeClient = process.env.NEXT_PUBLIC_NATIVE_CLIENT === "true";
 
 const navItems = [
   { href: "/", label: "食谱", icon: BookOpen },
@@ -180,6 +183,23 @@ export function Navbar({ onMenuClick, showMenuButton = false }: NavbarProps = {}
             );
           })}
         </nav>
+
+        {/* 下载客户端 - 仅网页版 */}
+        {!isNativeClient && (
+          <Link
+            href="/download"
+            aria-label="下载客户端"
+            className={cn(
+              "flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors",
+              pathname === "/download"
+                ? "border-primary/30 bg-primary/10 text-primary"
+                : "border-border text-foreground hover:border-primary/50 hover:bg-primary/5 hover:text-primary"
+            )}
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">下载</span>
+          </Link>
+        )}
 
         {/* 首页 AI 选菜 - 手机端右上角 */}
         {pathname === "/" && (

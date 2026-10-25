@@ -26,6 +26,7 @@ export default defineConfig({
     "process.env.NEXT_PUBLIC_RECIPE_AGENT_URL": JSON.stringify("https://cook.corerevive.cn/api/client/recipe-chef"),
     "process.env.NEXT_PUBLIC_RECIPE_FINDER_AGENT_URL": JSON.stringify("https://cook.corerevive.cn/api/client/recipe-finder"),
     "process.env.NEXT_PUBLIC_USE_MOCK": JSON.stringify("false"),
+    "process.env.NEXT_PUBLIC_NATIVE_CLIENT": JSON.stringify("true"),
   },
   css: { postcss: file("../") },
   server: { host: "127.0.0.1", port: 4178, strictPort: true, fs: { allow: [file("../")] } },

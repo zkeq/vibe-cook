@@ -71,3 +71,5 @@ native/ios/App/CapApp-SPM/.build/
 *.keystore
 *.p12
 *.mobileprovision
+native/kws/.build/
+native/kws/dist/

@@ -11,3 +11,23 @@ $:
       stages:
         - name: npc go
           type: npc:go
+
+# 推送 kws-* 标签时编译烹饪模式语音指令用的 sherpa-onnx WASM，产物挂到对应 Release
+"kws-*":
+  tag_push:
+    - runner:
+        cpus: 16
+      docker:
+        image: emscripten/emsdk:4.0.23
+      stages:
+        - name: build sherpa-onnx kws wasm
+          script: bash native/kws/build.sh
+        - name: create release
+          image: cnbcool/git-release
+          settings:
+            description: 烹饪模式语音指令（sherpa-onnx KWS WebAssembly 构建产物），非客户端版本。
+        - name: upload attachments
+          image: cnbcool/attachments:latest
+          settings:
+            attachments:
+              - native/kws/dist/*

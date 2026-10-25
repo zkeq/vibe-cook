@@ -56,13 +56,18 @@ export const FALLBACK_RELEASE: ReleaseInfo = {
 
 export async function fetchLatestRelease(): Promise<ReleaseInfo> {
   try {
-    const res = await fetch(`${CNB_RELEASES_URL}/latest`, {
+    // 仓库里还有 kws-* 等非客户端的 Release，只取 vX.Y.Z 的正式版
+    const res = await fetch(`${CNB_RELEASES_URL}?page=1&page_size=20`, {
       headers: { Accept: "application/json" },
       next: { revalidate: 600 },
     });
     if (!res.ok) throw new Error(`CNB ${res.status}`);
-    const data = await res.json();
-    const assets: ReleaseAsset[] = (data.assets as CnbAsset[]).map((a) => ({
+    const list: { tag_name: string; draft?: boolean; prerelease?: boolean }[] = await res.json();
+    const data = list.find((r) => /^v\d+\.\d+\.\d+$/.test(r.tag_name) && !r.draft && !r.prerelease) as
+      | ({ tag_name: string; published_at: string; body?: string; assets: CnbAsset[] })
+      | undefined;
+    if (!data) throw new Error("CNB has no client release");
+    const assets: ReleaseAsset[] = data.assets.map((a) => ({
       name: a.name,
       size: a.size,
       sha256: a.hash_value,

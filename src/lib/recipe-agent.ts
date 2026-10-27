@@ -9,6 +9,8 @@ export interface RecipeAgentChatMessage {
 export interface RecipeAgentSuggestion {
   stepIndex: number;
   reason: string;
+  // 改写后的完整步骤指令，应用后替换原指令并用于朗读
+  instruction?: string;
   tips: string[];
 }
 

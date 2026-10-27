@@ -49,7 +49,7 @@ function createWelcomeMessage(recipe: Recipe): DisplayMessage {
   return {
     id: crypto.randomUUID(),
     role: "assistant",
-    content: `我是你的菜谱 Agent。可以直接问我怎么调整「${recipe.title}」，我会把建议对应到具体步骤，确认后再添加进页面。`,
+    content: `我是你的菜谱 Agent。可以直接问我怎么调整「${recipe.title}」，我会把建议对应到具体步骤，确认后替换进菜谱，烹饪模式会按新步骤朗读。`,
   };
 }
 
@@ -79,12 +79,18 @@ export function RecipeAgent({
   const [error, setError] = useState("");
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { recipeTipAdditions, addRecipeTips, clearRecipeTips } = useUserSettingsStore();
+  const {
+    recipeTipAdditions,
+    addRecipeTips,
+    clearRecipeTips,
+    recipeStepRewrites,
+    setRecipeStepRewrite,
+  } = useUserSettingsStore();
   const addedTips = recipeTipAdditions[recipe.id] || {};
-  const addedTipCount = Object.values(addedTips).reduce(
-    (total, stepTips) => total + stepTips.length,
-    0
-  );
+  const stepRewrites = recipeStepRewrites[recipe.id] || {};
+  const addedTipCount =
+    Object.values(addedTips).reduce((total, stepTips) => total + stepTips.length, 0) +
+    Object.keys(stepRewrites).length;
   const conversations = useRecipeAgentHistoryStore((state) => state.conversations);
   const activeConversationByRecipe = useRecipeAgentHistoryStore(
     (state) => state.activeConversationByRecipe
@@ -278,7 +284,19 @@ export function RecipeAgent({
 
   const suggestionApplied = (suggestion: RecipeAgentSuggestion) => {
     const stepTips = addedTips[suggestion.stepIndex] || [];
-    return suggestion.tips.every((tip) => stepTips.includes(tip));
+    return (
+      (!suggestion.instruction || stepRewrites[suggestion.stepIndex] === suggestion.instruction) &&
+      suggestion.tips.every((tip) => stepTips.includes(tip))
+    );
+  };
+
+  const applySuggestion = (suggestion: RecipeAgentSuggestion) => {
+    if (suggestion.instruction) {
+      setRecipeStepRewrite(recipe.id, suggestion.stepIndex, suggestion.instruction);
+    }
+    if (suggestion.tips.length > 0) {
+      addRecipeTips(recipe.id, suggestion.stepIndex, suggestion.tips);
+    }
   };
 
   return (
@@ -419,7 +437,7 @@ export function RecipeAgent({
                         type="button"
                         onClick={() => clearRecipeTips(recipe.id)}
                         className="inline-flex shrink-0 items-center gap-1 rounded-md border border-red-200 bg-white px-2 py-1 text-[9px] font-bold text-red-600 transition-colors hover:bg-red-50"
-                        title={`清空当前菜谱的 ${addedTipCount} 条 AI 提示`}
+                        title={`清空当前菜谱的 ${addedTipCount} 条 AI 改写与提示`}
                       >
                         <Trash2 className="h-3 w-3" />
                         清空 AI 标记
@@ -513,7 +531,9 @@ export function RecipeAgent({
                                 {String(suggestion.stepIndex + 1).padStart(2, "0")}
                               </span>
                               <div className="min-w-0">
-                                <span className="block text-[8px] font-black uppercase tracking-widest text-primary">建议加入步骤</span>
+                                <span className="block text-[8px] font-black uppercase tracking-widest text-primary">
+                                  {suggestion.instruction ? "建议改写步骤" : "建议加入步骤"}
+                                </span>
                                 <span className="block truncate text-xs font-bold text-foreground">{step.title}</span>
                               </div>
                             </div>
@@ -524,6 +544,16 @@ export function RecipeAgent({
                             )}
                           </div>
                           <div className="space-y-2 px-3 py-3">
+                            {suggestion.instruction && (
+                              <div className="rounded-lg border border-primary/15 bg-primary/5 px-2.5 py-2">
+                                <p className="text-xs font-bold leading-relaxed text-foreground">
+                                  {suggestion.instruction}
+                                </p>
+                                <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground line-through decoration-muted-foreground/50">
+                                  {step.instruction}
+                                </p>
+                              </div>
+                            )}
                             {suggestion.tips.map((tip) => (
                               <div key={tip} className="flex items-start gap-2 text-[11px] leading-relaxed text-foreground">
                                 <span className="mt-1 h-3 w-0.5 shrink-0 rounded-full bg-primary" />
@@ -533,9 +563,7 @@ export function RecipeAgent({
                           </div>
                           <button
                             disabled={applied}
-                            onClick={() =>
-                              addRecipeTips(recipe.id, suggestion.stepIndex, suggestion.tips)
-                            }
+                            onClick={() => applySuggestion(suggestion)}
                             className={cn(
                               "flex w-full items-center justify-center gap-1.5 border-t px-3 py-2 text-[11px] font-bold transition-colors",
                               applied
@@ -544,7 +572,9 @@ export function RecipeAgent({
                             )}
                           >
                             <Check className="h-3.5 w-3.5" />
-                            {applied ? "已添加到此步骤" : "添加到此步骤"}
+                            {suggestion.instruction
+                              ? applied ? "已替换此步骤" : "替换此步骤"
+                              : applied ? "已添加到此步骤" : "添加到此步骤"}
                           </button>
                         </div>
                       );

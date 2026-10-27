@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, X, Clock, ChefHat, Play, Pause, RotateCcw, Volume2, VolumeX, Settings, ShoppingBasket, Minus, Plus, Sparkles } from "lucide-react";
 import Link from "next/link";
@@ -122,7 +122,17 @@ export function CookClient({ recipe }: CookClientProps) {
     servings: globalServings,
     setServings: setGlobalServings,
     recipeTipAdditions,
+    recipeStepRewrites,
   } = useUserSettingsStore();
+  // Agent 改写过的步骤用新指令替换原指令，显示和朗读都以它为准
+  const stepRewrites = recipeStepRewrites[recipe.id];
+  const steps = useMemo(
+    () =>
+      recipe.steps.map((step, i) =>
+        stepRewrites?.[i] ? { ...step, instruction: stepRewrites[i] } : step
+      ),
+    [recipe.steps, stepRewrites]
+  );
   const servings = globalServings[recipe.id] || recipe.servings.base;
   const setServings = (value: number) => setGlobalServings(recipe.id, value);
 
@@ -325,7 +335,7 @@ export function CookClient({ recipe }: CookClientProps) {
   // TTS 朗读当前步骤；设置面板试听时暂停自动朗读，避免两段声音重叠。
   useEffect(() => {
     if (!ttsEnabled || ttsSettingsOpen) return;
-    const step = recipe.steps[currentStep];
+    const step = steps[currentStep];
     if (!step) return;
     let active = true;
     setTtsError("");
@@ -337,7 +347,7 @@ export function CookClient({ recipe }: CookClientProps) {
       if (spokenTextRef.current === text) spokenTextRef.current = "";
     });
     return () => { active = false; spokenTextRef.current = ""; void speech.stop(); };
-  }, [currentStep, ttsEnabled, ttsSettings, ttsSettingsOpen, recipe.steps, ttsReplay]);
+  }, [currentStep, ttsEnabled, ttsSettings, ttsSettingsOpen, steps, ttsReplay]);
 
   // 步骤正计时逻辑
   useEffect(() => {
@@ -378,7 +388,7 @@ export function CookClient({ recipe }: CookClientProps) {
     else if (command === "repeat") {
       if (ttsEnabled) setTtsReplay((n) => n + 1);
       else {
-        const step = recipe.steps[currentStep];
+        const step = steps[currentStep];
         const text = `第${step.index}步，${step.title}。${step.instruction}`;
         spokenTextRef.current = text;
         void speech.speak(text, ttsSettings).catch(() => {}).finally(() => {
@@ -389,7 +399,8 @@ export function CookClient({ recipe }: CookClientProps) {
   };
   const getSpokenText = () => spokenTextRef.current;
 
-  const currentStepData = recipe.steps[currentStep];
+  const currentStepData = steps[currentStep];
+  const currentStepRewritten = Boolean(stepRewrites?.[currentStep]);
   const currentAgentTips = recipeTipAdditions[recipe.id]?.[currentStep] || [];
   const currentStepTips = [...(currentStepData.tips || []), ...currentAgentTips];
   const totalDuration = recipe.steps.reduce((sum, step) => sum + (step.duration_sec || 0), 0);
@@ -544,6 +555,12 @@ export function CookClient({ recipe }: CookClientProps) {
                 <div className="flex items-center gap-2 mb-1">
                   <div className="h-2 w-2 rounded-full bg-primary animate-pulse shadow-lg shadow-primary/50" />
                   <span className="text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground">ACTION REQUIRED</span>
+                  {currentStepRewritten && (
+                    <span className="inline-flex items-center gap-0.5 rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-black text-primary">
+                      <Sparkles className="h-2.5 w-2.5" />
+                      AI 改写
+                    </span>
+                  )}
                 </div>
                 <h2 className="text-3xl font-black tracking-tight leading-tight">
                   {renderHighlightedInstruction(currentStepData.instruction)}
@@ -1183,6 +1200,12 @@ export function CookClient({ recipe }: CookClientProps) {
               <div className="flex items-center gap-1.5 mb-2.5">
                 <div className="h-2 w-2 rounded-full bg-primary animate-pulse shadow-md shadow-primary/30" />
                 <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">ACTION REQUIRED</span>
+                {currentStepRewritten && (
+                  <span className="inline-flex items-center gap-0.5 rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-black text-primary">
+                    <Sparkles className="h-2.5 w-2.5" />
+                    AI 改写
+                  </span>
+                )}
               </div>
               <h2 className="text-xl font-black tracking-tight leading-snug text-foreground">
                 {renderHighlightedInstruction(currentStepData.instruction)}

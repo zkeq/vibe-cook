@@ -14,6 +14,7 @@ interface RecipeStepsProps {
 }
 
 const EMPTY_AGENT_TIPS: Readonly<Record<number, string[]>> = Object.freeze({});
+const EMPTY_STEP_REWRITES: Readonly<Record<number, string>> = Object.freeze({});
 
 export function RecipeSteps({ recipe }: RecipeStepsProps) {
   const [currentStep, setCurrentStep] = useState(0);
@@ -22,6 +23,9 @@ export function RecipeSteps({ recipe }: RecipeStepsProps) {
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const agentTips = useUserSettingsStore(
     (state) => state.recipeTipAdditions[recipe.id] ?? EMPTY_AGENT_TIPS
+  );
+  const stepRewrites = useUserSettingsStore(
+    (state) => state.recipeStepRewrites[recipe.id] ?? EMPTY_STEP_REWRITES
   );
 
   useEffect(() => {
@@ -147,7 +151,15 @@ export function RecipeSteps({ recipe }: RecipeStepsProps) {
                   </span>
                 )}
               </div>
-              <p className="text-sm leading-relaxed text-muted-foreground">{step.instruction}</p>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {stepRewrites[i] ?? step.instruction}
+                {stepRewrites[i] && (
+                  <span className="ml-1.5 inline-flex items-center gap-0.5 rounded bg-primary/10 px-1 py-0.5 align-middle text-[8px] font-bold text-primary">
+                    <Sparkles className="h-2.5 w-2.5" />
+                    AI 改写
+                  </span>
+                )}
+              </p>
               {step.produces && (
                 <div className="mt-2 inline-block rounded-md bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
                   产出: {step.produces}

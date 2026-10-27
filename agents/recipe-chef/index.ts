@@ -29,6 +29,7 @@ interface ModelStreamChunk {
 interface SuggestedChange {
   stepIndex: number;
   reason: string;
+  instruction?: string;
   tips: string[];
 }
 
@@ -69,17 +70,21 @@ function extractSuggestions(content: string, stepCount: number): SuggestedChange
               Number.isInteger(item?.stepIndex) &&
               item.stepIndex >= 0 &&
               item.stepIndex < stepCount &&
-              Array.isArray(item.tips)
+              (Array.isArray(item.tips) || typeof item.instruction === "string")
           )
           .map((item) => ({
             stepIndex: item.stepIndex,
             reason: typeof item.reason === "string" ? item.reason : "",
-            tips: item.tips
+            instruction:
+              typeof item.instruction === "string" && item.instruction.trim()
+                ? item.instruction.trim()
+                : undefined,
+            tips: (Array.isArray(item.tips) ? item.tips : [])
               .filter((tip): tip is string => typeof tip === "string" && tip.trim().length > 0)
               .map((tip) => tip.trim())
               .slice(0, 3),
           }))
-          .filter((item) => item.tips.length > 0)
+          .filter((item) => item.instruction || item.tips.length > 0)
       : [];
   } catch {
     return [];
@@ -153,7 +158,7 @@ export async function onRequest(context: AgentContext): Promise<Response> {
 
 你的回答有两层：
 1. 先给用户一份完整的 Markdown 主厨解答，不能只为了修改菜谱而简略回答。
-2. 再把适合写入菜谱的内容拆成可执行 tips，准确关联到已有步骤。不要新造不存在的步骤，不要改写原指令。
+2. 再把要写入菜谱的改动准确关联到已有步骤。不要新造不存在的步骤。凡是用量、火候、时长或做法有变化的步骤，必须给出改写后的完整指令 instruction，它会直接替换原指令并在烹饪模式朗读给用户听；只是补充注意事项、原指令不变时才只给 tips。
 
 正文要求：
 - 通常写 400–700 个中文字，根据问题复杂度调整，但不要只回答一两句。
@@ -164,9 +169,9 @@ export async function onRequest(context: AgentContext): Promise<Response> {
 1. 直接输出 Markdown 正文，不要用代码块包裹。
 2. 正文结束后单独输出一行 ${SUGGESTIONS_MARKER}
 3. 紧接着输出 JSON 数组，不要用代码块：
-[{"stepIndex":0,"reason":"为什么关联这一步","tips":["可直接加入页面的具体提示"]}]
+[{"stepIndex":0,"reason":"为什么改这一步","instruction":"改写后的完整步骤指令","tips":["补充提示"]}]
 
-约束：stepIndex 从 0 开始；每条 tip 必须单独可执行，包含必要的用量、时机或火候；每步最多 3 条；无需修改步骤时输出 []；不要声称已经替用户修改页面。
+约束：stepIndex 从 0 开始；instruction 是改动后这一步完整、可直接照做的一到两句话，写明新的用量、火候和时长（如「放入 200g 肉末，大火翻炒 1 分钟至变色」），不要写「改为」「原来是」这类对比说法，也不要用括号、表情和 Markdown，因为会被朗读；指令不变时省略 instruction；tips 可为空数组，每条单独可执行，每步最多 3 条，不要重复 instruction 已经写明的内容；无需修改步骤时输出 []；不要声称已经替用户修改页面。
 
 当前菜谱：${JSON.stringify(recipeContext)}`;
 

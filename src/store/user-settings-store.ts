@@ -17,6 +17,10 @@ interface UserSettingsState {
   addRecipeTips: (recipeId: string, stepIndex: number, tips: string[]) => void;
   clearRecipeTips: (recipeId: string) => void;
 
+  // Agent 改写的步骤指令，替换原指令显示与朗读（recipeId -> stepIndex -> instruction）
+  recipeStepRewrites: Record<string, Record<number, string>>;
+  setRecipeStepRewrite: (recipeId: string, stepIndex: number, instruction: string) => void;
+
   // 用户偏好设置
   preferences: {
     theme?: 'light' | 'dark';
@@ -34,6 +38,7 @@ export const useUserSettingsStore = create<UserSettingsState>()(
       servings: {},
       shoppingLists: {},
       recipeTipAdditions: {},
+      recipeStepRewrites: {},
       preferences: {},
 
       setServings: (recipeId, servings) =>
@@ -77,12 +82,22 @@ export const useUserSettingsStore = create<UserSettingsState>()(
           };
         }),
 
+      setRecipeStepRewrite: (recipeId, stepIndex, instruction) =>
+        set((state) => ({
+          recipeStepRewrites: {
+            ...state.recipeStepRewrites,
+            [recipeId]: { ...state.recipeStepRewrites[recipeId], [stepIndex]: instruction.trim() },
+          },
+        })),
+
       clearRecipeTips: (recipeId) =>
         set((state) => {
           const remainingRecipeTips = { ...state.recipeTipAdditions };
           delete remainingRecipeTips[recipeId];
+          const remainingRewrites = { ...state.recipeStepRewrites };
+          delete remainingRewrites[recipeId];
 
-          return { recipeTipAdditions: remainingRecipeTips };
+          return { recipeTipAdditions: remainingRecipeTips, recipeStepRewrites: remainingRewrites };
         }),
 
       setPreference: (key, value) =>

@@ -377,7 +377,7 @@ export async function onRequest(context: AgentContext): Promise<Response> {
     /\/$/,
     ""
   );
-  const model = context.env.AI_GATEWAY_MODEL || "@makers/deepseek-v4-flash";
+  const model = context.env.AI_GATEWAY_MODEL || "deepseek-flash";
   const recipeApiBase = (
     context.env.RECIPE_API_BASE_URL || "http://cook-api.corerevive.cn/api/v1"
   ).replace(/\/$/, "");

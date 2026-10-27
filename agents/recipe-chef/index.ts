@@ -114,7 +114,7 @@ export async function onRequest(context: AgentContext): Promise<Response> {
 
   const apiKey = context.env.AI_GATEWAY_API_KEY;
   const baseUrl = (context.env.AI_GATEWAY_BASE_URL || "https://ai-gateway.edgeone.link/v1").replace(/\/$/, "");
-  const model = context.env.AI_GATEWAY_MODEL || "@makers/deepseek-v4-flash";
+  const model = context.env.AI_GATEWAY_MODEL || "deepseek-flash";
   if (!apiKey) {
     return jsonResponse(
       {

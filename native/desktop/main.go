@@ -11,6 +11,7 @@ import (
 )
 
 func main() {
+	mygo.Bind(&Updates{})
 	mygo.Use(fetch.New(fetch.Options{
 		Client: &http.Client{Timeout: 5 * time.Minute},
 		Allow: func(r *http.Request) bool {

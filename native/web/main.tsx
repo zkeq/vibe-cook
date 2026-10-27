@@ -12,6 +12,7 @@ import RecipePage from "@/app/recipe/[id]/page";
 import CookPage from "@/app/recipe/[id]/cook/page";
 import ShoppingPage from "@/app/recipe/[id]/shopping/page";
 import { NETWORK_RETRY_EVENT } from "./network-retry";
+import { AppUpdateCard } from "./app-updater";
 import "./styles.css";
 
 function NativeLifecycle() {
@@ -50,6 +51,7 @@ function RecipeFrame() {
 function ClientApp() {
   return <BrowserRouter><Providers>
     <NativeLifecycle />
+    <AppUpdateCard />
     <Routes>
       <Route path="/" element={<><Navbar /><div className="pt-14"><HomePage /></div></>} />
       <Route path="/recipe" element={<RecipeFrame />}>

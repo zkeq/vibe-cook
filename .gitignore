@@ -73,3 +73,6 @@ native/ios/App/CapApp-SPM/.build/
 *.mobileprovision
 native/kws/.build/
 native/kws/dist/
+
+# Android release keystore and its passwords
+android-signing/

@@ -47,6 +47,9 @@ jobs:
       - run: npm ci
       - run: brew install makensis
       - run: npm run desktop:build
+        env:
+          # 签名桌面端自动更新包；未配置时只出安装包，不生成更新文件
+          MYGO_UPDATER_PRIVATE_KEY: ${{ secrets.MYGO_UPDATER_PRIVATE_KEY }}
       - name: Collect Mac and Windows packages
         run: |
           mkdir -p release-assets
@@ -54,6 +57,8 @@ jobs:
           cp "native/release/darwin-universal/Vibe Cook $VERSION.dmg" "release-assets/Vibe-Cook-$VERSION-macos-universal.dmg"
           cp "native/release/windows-amd64/Vibe Cook Setup $VERSION.exe" "release-assets/Vibe-Cook-$VERSION-windows-x64-setup.exe"
           ditto -c -k --sequesterRsrc --keepParent "native/release/darwin-universal/Vibe Cook.app" "release-assets/Vibe-Cook-$VERSION-macos-universal.zip"
+          # 自动更新用的签名包、增量包和各平台清单
+          find native/release/darwin-universal native/release/windows-amd64 -maxdepth 1 -type f \( -name "update-*.json" -o -name "*.tar.gz" -o -name "*.delta" \) -exec cp {} release-assets/ \;
       - uses: actions/upload-artifact@v7
         with:
           name: desktop

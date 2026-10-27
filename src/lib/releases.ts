@@ -86,7 +86,7 @@ export async function fetchLatestRelease(): Promise<ReleaseInfo> {
 export const PLATFORM_FILES: Record<PlatformId, { primary: RegExp; extras: { pattern: RegExp; label: string }[] }> = {
   macos: { primary: /macos-universal\.dmg$/, extras: [{ pattern: /macos-universal\.zip$/, label: "ZIP 压缩包" }] },
   windows: { primary: /windows-x64-setup\.exe$/, extras: [] },
-  android: { primary: /android-[\w-]*\.apk$/, extras: [] },
+  android: { primary: /android(-[\w-]+)?\.apk$/, extras: [] },
   ios: { primary: /ios-unsigned\.ipa$/, extras: [{ pattern: /ios-xcarchive\.zip$/, label: "Xcode Archive" }] },
 };
 

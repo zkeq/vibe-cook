@@ -114,7 +114,7 @@ export async function onRequest(context: AgentContext): Promise<Response> {
 
   const apiKey = context.env.AI_GATEWAY_API_KEY;
   const baseUrl = ("https://api.deepseek.com").replace(/\/$/, "");
-  const model = "deepseek-v4-flash";
+  const model = "deepseek-flash";
   if (!apiKey) {
     return jsonResponse(
       {

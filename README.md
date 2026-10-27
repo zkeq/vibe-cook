@@ -98,7 +98,7 @@ HowToCook Markdown  →  LLM 结构化（JSON 分步 + 生图）  →  后端下
 | 状态 | Zustand |
 | 交付 | PWA + MyGo 桌面客户端 + Capacitor 移动客户端 |
 | 语音 | sherpa-onnx 关键词识别（WASM，本机运行） |
-| Agent | EdgeOne Makers（选菜 / 厨师） |
+| Agent | EdgeOne Makers（选菜 / 厨师），模型走 DeepSeek 官方 API |
 | 后端 | [FastAPI + SQLite](https://github.com/zkeq/vibe-cook-backend) |
 
 ## 🚀 本地开发
@@ -135,7 +135,7 @@ npm run dev
 | `NEXT_PUBLIC_API_URL` | 后端 API，例如 `http://localhost:8000/api/v1` |
 | `NEXT_PUBLIC_USE_MOCK` | `true` 时走内置 mock |
 | `NEXT_PUBLIC_RECIPE_AGENT_URL` | Agent 分域部署时填写；同域留空 |
-| `AI_GATEWAY_*` | 仅 EdgeOne Makers 使用，**不要**加 `NEXT_PUBLIC_` 前缀 |
+| `AI_GATEWAY_API_KEY` | DeepSeek 官方 API Key（Agent 服务端使用），配置方法见下方「AI Agent」一节；**不要**加 `NEXT_PUBLIC_` 前缀 |
 
 ## 🤖 AI Agent（可选）
 
@@ -147,6 +147,23 @@ edgeone makers dev
 ```
 
 `makers dev` 会同时拉起 Web 和 Agent。只跑 `npm run dev` 没有 Makers 运行时。
+
+### 配置模型（DeepSeek 官方 API）
+
+两个 Agent 都直接调用 **DeepSeek 官方 API**，不再经过 EdgeOne AI Gateway。
+
+- 接口：`https://api.deepseek.com`
+- 模型：`deepseek-flash`
+
+你只需要准备一个 DeepSeek 的 API Key：
+
+1. 打开 [platform.deepseek.com](https://platform.deepseek.com)，注册并充值，在「API Keys」页创建一个 Key；
+2. 把它填到环境变量 **`AI_GATEWAY_API_KEY`**（变量名沿用旧的，里面装的已经是 DeepSeek 的 Key），二选一：
+   - 部署：在 EdgeOne Makers 项目的「环境变量」设置里添加；
+   - 本地：写进 `.env.local`（参见 `.env.example`）；
+3. 重新部署或重启 `makers dev` 生效。没有配 Key 时 Agent 接口会返回 503，前端其余功能不受影响。
+
+想换模型：改上面两个 `index.ts` 里的 `model` 常量即可；`AI_GATEWAY_BASE_URL`、`AI_GATEWAY_MODEL` 这两个旧变量已不再使用。
 
 ## 📦 部署
 

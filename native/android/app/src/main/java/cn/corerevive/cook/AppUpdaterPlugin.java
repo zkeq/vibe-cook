@@ -42,7 +42,7 @@ public class AppUpdaterPlugin extends Plugin {
         executor.execute(() -> {
             try {
                 String current = currentVersion();
-                JSONArray releases = new JSONArray(readText(RELEASES_URL));
+                JSONArray releases = new JSONArray(readText(RELEASES_URL, "application/json"));
                 JSObject result = new JSObject();
                 result.put("current", current);
                 // 列表按时间倒序，取第一个带 APK 的正式版；kws-* 等非客户端 Release 跳过
@@ -76,7 +76,7 @@ public class AppUpdaterPlugin extends Plugin {
         executor.execute(() -> {
             HttpURLConnection conn = null;
             try {
-                conn = open(url);
+                conn = open(url, "application/octet-stream");
                 long total = conn.getContentLengthLong();
                 File file = apkFile();
                 long downloaded = 0;
@@ -166,14 +166,15 @@ public class AppUpdaterPlugin extends Plugin {
         return 0;
     }
 
-    private static HttpURLConnection open(String url) throws Exception {
+    // CNB 按 Accept 返回内容：只有恰好是 application/json 才给 JSON，否则返回网页
+    private static HttpURLConnection open(String url, String accept) throws Exception {
         // CNB 下载地址会跳转到对象存储，手动跟随以支持跨域名跳转
         for (int i = 0; i < 5; i++) {
             HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setInstanceFollowRedirects(false);
             conn.setConnectTimeout(15000);
             conn.setReadTimeout(30000);
-            conn.setRequestProperty("Accept", "application/json, application/octet-stream");
+            conn.setRequestProperty("Accept", accept);
             int status = conn.getResponseCode();
             if (status >= 300 && status < 400) {
                 url = new URL(new URL(url), conn.getHeaderField("Location")).toString();
@@ -186,8 +187,8 @@ public class AppUpdaterPlugin extends Plugin {
         throw new Exception("跳转次数过多");
     }
 
-    private static String readText(String url) throws Exception {
-        HttpURLConnection conn = open(url);
+    private static String readText(String url, String accept) throws Exception {
+        HttpURLConnection conn = open(url, accept);
         try (InputStream in = conn.getInputStream()) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             byte[] buffer = new byte[16 * 1024];

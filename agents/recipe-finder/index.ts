@@ -373,11 +373,8 @@ export async function onRequest(context: AgentContext): Promise<Response> {
   }
 
   const apiKey = context.env.AI_GATEWAY_API_KEY;
-  const modelBase = (context.env.AI_GATEWAY_BASE_URL || "https://ai-gateway.edgeone.link/v1").replace(
-    /\/$/,
-    ""
-  );
-  const model = context.env.AI_GATEWAY_MODEL || "@makers/deepseek-v4-flash";
+  const modelBase = ("https://api.deepseek.com").replace(/\/$/, "");
+  const model = "deepseek-flash";
   const recipeApiBase = (
     context.env.RECIPE_API_BASE_URL || "http://cook-api.corerevive.cn/api/v1"
   ).replace(/\/$/, "");

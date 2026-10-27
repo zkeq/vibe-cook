@@ -150,7 +150,7 @@ edgeone makers dev
 
 ### 配置模型（DeepSeek 官方 API）
 
-两个 Agent 都直接调用 **DeepSeek 官方 API**，不再经过 EdgeOne AI Gateway（旧网关的模型效果和额度都不理想）。接口地址与模型名写在代码里（`agents/recipe-chef/index.ts`、`agents/recipe-finder/index.ts`）：
+两个 Agent 都直接调用 **DeepSeek 官方 API**，不再经过 EdgeOne AI Gateway。
 
 - 接口：`https://api.deepseek.com`
 - 模型：`deepseek-flash`

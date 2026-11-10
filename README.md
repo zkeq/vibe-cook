@@ -12,6 +12,8 @@
   <a href="https://github.com/zkeq/vibe-cook-backend"><img src="https://img.shields.io/badge/🛠_后端-vibe--cook--backend-1e293b?style=for-the-badge" alt="Backend"></a>
   &nbsp;
   <img src="https://img.shields.io/badge/License-BUSL--1.1-red?style=for-the-badge" alt="BUSL-1.1">
+    &nbsp;
+  <a href="https://awesomemygo.dev/apps/vibe-cook"><img src="https://awesomemygo.dev/badge.svg" alt="Backend"></a>
 </p>
 
 <p align="center">

@@ -197,3 +197,13 @@ macOS 和 Windows 客户端使用 [MyGo](https://mygo.egoist.dev/) 构建，Andr
 **结构化菜谱与配图**采用 **[The Unlicense](https://unlicense.org)**，与 HowToCook 相同，见文首数据集卡片。
 
 如果这个项目让你今晚真的下厨了，欢迎 Star ⭐
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=zkeq%2Fvibe-cook&type=date&legend=bottom-right">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=zkeq/vibe-cook&type=date&theme=dark&legend=bottom-right" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=zkeq/vibe-cook&type=date&legend=bottom-right" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=zkeq/vibe-cook&type=date&legend=bottom-right" />
+ </picture>
+</a>
